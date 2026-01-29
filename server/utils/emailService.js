@@ -13,17 +13,17 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 // Create email transporter
 // Create email transporter
 // Use explicit SMTP settings for better reliability on Render
+// Switched to Port 465 (SSL) and enabled debug logging
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  port: 465,
+  secure: true, // Use SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
-  tls: {
-    rejectUnauthorized: false // Helps avoid some certificate issues in production
-  }
+  debug: true, // Show debug output
+  logger: true // Log information to console
 });
 
 // Helper to send mail with timeout
