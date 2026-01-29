@@ -87,7 +87,7 @@ export const sendOTPEmail = async (email, otp) => {
     return true;
   } catch (error) {
     console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
-    
+
     // Fallback for development: log OTP to console
     if (process.env.NODE_ENV === 'development') {
       console.warn('⚠️  Email sending failed. Falling back to console log for testing.');
@@ -99,7 +99,7 @@ export const sendOTPEmail = async (email, otp) => {
       console.log(`${'='.repeat(60)}\n`);
       return true; // Allow testing to continue
     }
-    
+
     return false;
   }
 };
@@ -162,11 +162,20 @@ export const sendPasswordResetConfirmation = async (email) => {
  */
 export const verifyEmailConfig = async () => {
   try {
-    await transporter.verify();
+    // Set a timeout for verification to prevent hanging
+    const verifyPromise = transporter.verify();
+
+    // Create a timeout promise that resolves false after 3 seconds
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+
+    // Race them
+    await Promise.race([verifyPromise, timeoutPromise]);
+
     console.log('✅ Email service is properly configured');
     return true;
   } catch (error) {
     console.error('❌ Email service configuration error:', error.message);
+    // In production, we don't want to crash, we just want to log that email won't work
     return false;
   }
 };
@@ -181,7 +190,7 @@ export const verifyEmailConfig = async () => {
 export const sendOrderConfirmationEmail = async (email, order, customerName) => {
   try {
     // console.log('\n📧 [ORDER CONFIRMATION] Attempting to send email to:', email);
-    
+
     // Check if email is properly configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       // console.warn('⚠️  Email not configured. Falling back to console log.');
@@ -193,7 +202,7 @@ export const sendOrderConfirmationEmail = async (email, order, customerName) => 
       // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-    
+
     // console.log('✅ [ORDER CONFIRMATION] Email credentials found. Sending...');
 
     // Generate product list HTML
@@ -303,7 +312,7 @@ export const sendOrderConfirmationEmail = async (email, order, customerName) => 
 export const sendOrderShippedEmail = async (email, order, customerName) => {
   try {
     // console.log('\n📦 [ORDER SHIPPED] Attempting to send email to:', email);
-    
+
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       // console.warn('⚠️  Email not configured. Falling back to console log.');
       // console.log(`\n${'='.repeat(60)}`);
@@ -314,11 +323,11 @@ export const sendOrderShippedEmail = async (email, order, customerName) => {
       // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-    
+
     // console.log('✅ [ORDER SHIPPED] Email credentials found. Sending...');
 
     const trackingNumber = order.tracking?.trackingNumber || 'To be updated';
-    const estimatedDelivery = order.tracking?.estimatedDelivery 
+    const estimatedDelivery = order.tracking?.estimatedDelivery
       ? new Date(order.tracking.estimatedDelivery).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
       : 'Within 5-7 business days';
 
@@ -396,7 +405,7 @@ export const sendOrderShippedEmail = async (email, order, customerName) => {
 export const sendOrderDeliveredEmail = async (email, order, customerName) => {
   try {
     // console.log('\n✅ [ORDER DELIVERED] Attempting to send email to:', email);
-    
+
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       // console.warn('⚠️  Email not configured. Falling back to console log.');
       // console.log(`\n${'='.repeat(60)}`);
@@ -406,7 +415,7 @@ export const sendOrderDeliveredEmail = async (email, order, customerName) => {
       // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-    
+
     // console.log('✅ [ORDER DELIVERED] Email credentials found. Sending...');
 
     const mailOptions = {

@@ -51,19 +51,19 @@ export default function Footer() {
                     <ul>
                         <li>
                             <span className="contact-icon">📍</span>
-                            <span>123 Luxury Avenue,<br />Mumbai, India 400001</span>
+                            <span>Beauty Point Shop,<br />kamothe Navi Mumbai,410209</span>
                         </li>
                         <li>
                             <span className="contact-icon">📞</span>
-                            <span>+91 98765 43210</span>
+                            <span>+91 8850584703</span>
                         </li>
                         <li>
                             <span className="contact-icon">📧</span>
-                            <span>support@beautypoint.com</span>
+                            <span>beautypoint800@gmail.com</span>
                         </li>
                         <li>
                             <span className="contact-icon">⏰</span>
-                            <span>Mon - Sat: 9 AM - 7 PM</span>
+                            <span>Mon - Sun: 10 AM - 10 PM</span>
                         </li>
                     </ul>
                 </div>
