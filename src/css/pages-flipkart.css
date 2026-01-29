@@ -589,7 +589,49 @@
   color: #212121;
 }
 
-.status-date {
-  color: #878787;
-  font-size: 0.9rem;
+
+/* Responsive Order Confirmation */
+@media (max-width: 768px) {
+  .order-confirmation-container {
+    padding: 1rem;
+  }
+
+  .confirmation-card {
+    padding: 1.5rem;
+  }
+
+  .confirmation-card h1 {
+    font-size: 1.5rem;
+  }
+
+  .product-summary {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .product-image img {
+    height: 150px;
+    width: 60%; /* Smaller image on mobile */
+  }
+
+  .detail-row {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+  }
+
+  .detail-row .value {
+    text-align: left;
+  }
+
+  .item {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .item span:first-child {
+    width: 100%; /* Product name full width */
+    margin-bottom: 0.25rem;
+  }
 }
