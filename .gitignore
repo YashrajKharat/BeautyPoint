@@ -1,0 +1,66 @@
+# ==========================================
+# ENVIRONMENT & SECRETS (CRITICAL!)
+# ==========================================
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.production
+
+# ==========================================
+# LOGS
+# ==========================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# DEPENDENCIES & BUILD
+# ==========================================
+node_modules/
+dist/
+dist-ssr/
+build/
+.next/
+out/
+*.local
+
+# ==========================================
+# IDE & EDITOR
+# ==========================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# UPLOADS (use cloud storage instead)
+# ==========================================
+server/public/uploads/
+public/uploads/
+
+# ==========================================
+# TEST COVERAGE
+# ==========================================
+coverage/
+.nyc_output/
+
+# ==========================================
+# TEMPORARY FILES
+# ==========================================
+tmp/
+temp/
+*.tmp

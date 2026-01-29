@@ -1,0 +1,35 @@
+/* ============================================
+   ADMIN WRAPPER - LAYOUT WITH NAVBAR
+   ============================================ */
+
+.admin-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f7ff;
+}
+
+.admin-wrapper-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Content styling */
+.admin-wrapper-main > div {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-wrapper-main {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-wrapper-main {
+    padding: 0.75rem;
+  }
+}
