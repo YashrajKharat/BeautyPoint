@@ -221,7 +221,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.NODE_ENV === 'production' ? 'localhost' : '0.0.0.0';
+const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   console.log(`✅ Server running on port ${PORT} (${process.env.NODE_ENV})`);
