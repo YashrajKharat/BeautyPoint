@@ -10,10 +10,6 @@ const __dirname = path.dirname(__filename);
 // Load .env from server root directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// console.log('📧 Email Service Initializing...');
-// console.log('EMAIL_USER loaded:', process.env.EMAIL_USER ? '✓ Yes' : '✗ No');
-// console.log('EMAIL_PASSWORD loaded:', process.env.EMAIL_PASSWORD ? '✓ Yes' : '✗ No');
-
 // Create email transporter
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE || 'gmail',
@@ -22,6 +18,15 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD
   }
 });
+
+// Helper to send mail with timeout
+const sendMailWithTimeout = async (mailOptions) => {
+  const sendPromise = transporter.sendMail(mailOptions);
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Email sending timed out after 5s')), 5000)
+  );
+  return Promise.race([sendPromise, timeoutPromise]);
+};
 
 /**
  * Send OTP via email
@@ -82,7 +87,7 @@ export const sendOTPEmail = async (email, otp) => {
       `
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithTimeout(mailOptions);
     console.log(`✅ OTP email sent to ${email} (Message ID: ${result.messageId})`);
     return true;
   } catch (error) {
@@ -147,7 +152,7 @@ export const sendPasswordResetConfirmation = async (email) => {
       `
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithTimeout(mailOptions);
     console.log(`✅ Password reset confirmation email sent to ${email}`);
     return true;
   } catch (error) {
@@ -189,21 +194,10 @@ export const verifyEmailConfig = async () => {
  */
 export const sendOrderConfirmationEmail = async (email, order, customerName) => {
   try {
-    // console.log('\n📧 [ORDER CONFIRMATION] Attempting to send email to:', email);
-
     // Check if email is properly configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      // console.warn('⚠️  Email not configured. Falling back to console log.');
-      // console.log(`\n${'='.repeat(60)}`);
-      // console.log(`📧 ORDER CONFIRMATION (Email not configured)`);
-      // console.log(`Email: ${email}`);
-      // console.log(`Order ID: ${order.id}`);
-      // console.log(`Total Amount: ₹${order.total_amount}`);
-      // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-
-    // console.log('✅ [ORDER CONFIRMATION] Email credentials found. Sending...');
 
     // Generate product list HTML
     let productsHTML = '';
@@ -293,7 +287,7 @@ export const sendOrderConfirmationEmail = async (email, order, customerName) => 
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithTimeout(mailOptions);
     console.log(`✅ Order confirmation email sent to ${email}`);
     return true;
   } catch (error) {
@@ -311,20 +305,9 @@ export const sendOrderConfirmationEmail = async (email, order, customerName) => 
  */
 export const sendOrderShippedEmail = async (email, order, customerName) => {
   try {
-    // console.log('\n📦 [ORDER SHIPPED] Attempting to send email to:', email);
-
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      // console.warn('⚠️  Email not configured. Falling back to console log.');
-      // console.log(`\n${'='.repeat(60)}`);
-      // console.log(`📧 ORDER SHIPPED (Email not configured)`);
-      // console.log(`Email: ${email}`);
-      // console.log(`Order ID: ${order.id}`);
-      // console.log(`Tracking Number: ${order.tracking?.trackingNumber || 'N/A'}`);
-      // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-
-    // console.log('✅ [ORDER SHIPPED] Email credentials found. Sending...');
 
     const trackingNumber = order.tracking?.trackingNumber || 'To be updated';
     const estimatedDelivery = order.tracking?.estimatedDelivery
@@ -386,7 +369,7 @@ export const sendOrderShippedEmail = async (email, order, customerName) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithTimeout(mailOptions);
     console.log(`✅ Order shipped email sent to ${email}`);
     return true;
   } catch (error) {
@@ -404,19 +387,9 @@ export const sendOrderShippedEmail = async (email, order, customerName) => {
  */
 export const sendOrderDeliveredEmail = async (email, order, customerName) => {
   try {
-    // console.log('\n✅ [ORDER DELIVERED] Attempting to send email to:', email);
-
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      // console.warn('⚠️  Email not configured. Falling back to console log.');
-      // console.log(`\n${'='.repeat(60)}`);
-      // console.log(`📧 ORDER DELIVERED (Email not configured)`);
-      // console.log(`Email: ${email}`);
-      // console.log(`Order ID: ${order.id}`);
-      // console.log(`${'='.repeat(60)}\n`);
       return true;
     }
-
-    // console.log('✅ [ORDER DELIVERED] Email credentials found. Sending...');
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -468,7 +441,7 @@ export const sendOrderDeliveredEmail = async (email, order, customerName) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithTimeout(mailOptions);
     console.log(`✅ Order delivered email sent to ${email}`);
     return true;
   } catch (error) {
