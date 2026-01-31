@@ -250,7 +250,7 @@ export default function AdminProducts() {
               <textarea
                 id="colors-input"
                 name="colors"
-                placeholder="Red, Blue, Green, #FF0000"
+                placeholder="Red, Blue, Green, #FF0000 (separate with commas)"
                 value={formData.colors || ''}
                 onChange={handleInputChange}
                 rows="2"

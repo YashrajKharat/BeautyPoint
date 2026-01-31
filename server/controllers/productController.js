@@ -65,7 +65,8 @@ const parseColors = (colorsInput) => {
   try {
     return JSON.parse(colorsInput);
   } catch (e) {
-    return colorsInput.split(',').map(c => c.trim()).filter(c => c);
+    // Split by comma, newline, or pipe, and clean up quotes
+    return colorsInput.split(/[\n,]+/).map(c => c.replace(/['"]/g, '').trim()).filter(c => c);
   }
 };
 
@@ -144,22 +145,15 @@ export const createProduct = async (req, res) => {
       productData.description = description.trim();
     }
 
-    console.log('Creating product with data:', JSON.stringify(productData, null, 2));
-
     const product = await productDB.create(productData);
 
     res.status(201).json({ message: 'Product created successfully', product });
   } catch (error) {
-    console.error('CRITICAL ERROR in createProduct:', error);
-    console.error('Error stack:', error.stack);
-    if (error.details) console.error('Error details:', error.details);
-    if (error.hint) console.error('Error hint:', error.hint);
-
     const errorMessage = error.message || 'Unknown error';
     res.status(500).json({
       message: 'Error creating product',
       error: errorMessage,
-      details: error.details || error.hint || null
+      details: error.details || null
     });
   }
 };
