@@ -144,15 +144,22 @@ export const createProduct = async (req, res) => {
       productData.description = description.trim();
     }
 
+    console.log('Creating product with data:', JSON.stringify(productData, null, 2));
+
     const product = await productDB.create(productData);
 
     res.status(201).json({ message: 'Product created successfully', product });
   } catch (error) {
+    console.error('CRITICAL ERROR in createProduct:', error);
+    console.error('Error stack:', error.stack);
+    if (error.details) console.error('Error details:', error.details);
+    if (error.hint) console.error('Error hint:', error.hint);
+
     const errorMessage = error.message || 'Unknown error';
     res.status(500).json({
       message: 'Error creating product',
       error: errorMessage,
-      details: error.details || null
+      details: error.details || error.hint || null
     });
   }
 };
