@@ -179,14 +179,20 @@ export const sendPasswordResetConfirmation = async (email) => {
  */
 export const verifyEmailConfig = async () => {
   try {
+    console.log('🔄 Verifying email configuration...');
     // Set a timeout for verification to prevent hanging
-    const verifyPromise = transporter.verify();
+    const verifyPromise = transporter.verify().then(() => 'SUCCESS');
 
-    // Create a timeout promise that resolves false after 3 seconds
-    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+    // Create a timeout promise
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 5000));
 
     // Race them
-    await Promise.race([verifyPromise, timeoutPromise]);
+    const result = await Promise.race([verifyPromise, timeoutPromise]);
+
+    if (result === 'TIMEOUT') {
+      console.error('❌ Email verification TIMED OUT. Check networking/firewall.');
+      return false;
+    }
 
     console.log('✅ Email service is properly configured');
     return true;
