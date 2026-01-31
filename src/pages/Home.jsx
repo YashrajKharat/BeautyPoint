@@ -352,14 +352,14 @@ Message: ${contactFormData.message}
             <div className="contact-card">
               <div className="contact-icon">📧</div>
               <h3>Email</h3>
-              <p>support@luxestore.com</p>
-              <a href="mailto:support@luxestore.com" className="contact-link">Send Email →</a>
+              <p>beautypoint800@gmail.com</p>
+              <a href="mailto:beautypoint800@gmail.com" className="contact-link">Send Email →</a>
             </div>
             <div className="contact-card">
               <div className="contact-icon">📱</div>
               <h3>Phone</h3>
-              <p>+91 98765 43210</p>
-              <a href="tel:+919876543210" className="contact-link">Call Now →</a>
+              <p>+91 8850584703</p>
+              <a href="tel:+91 8850584703" className="contact-link">Call Now →</a>
             </div>
             <div className="contact-card">
               <div className="contact-icon">📍</div>
