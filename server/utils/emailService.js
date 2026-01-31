@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load .env from server root directory
-dotenv.config({ path: path.join(__dirname, '../.env') });
+// Load .env from project root directory (up 2 levels from utils)
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Create email transporter
 // Create email transporter
