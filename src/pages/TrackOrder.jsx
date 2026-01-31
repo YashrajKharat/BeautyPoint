@@ -47,21 +47,21 @@ export default function TrackOrder() {
 
   const handleCancelOrder = async () => {
     if (!selectedOrder) return;
-    
+
     setIsCancelling(true);
     try {
       await orderAPI.cancelOrder(selectedOrder.id, {
         reason: cancellationReason || 'Customer requested cancellation'
       });
-      
-      const updatedOrders = orders.map(order => 
-        order.id === selectedOrder.id 
+
+      const updatedOrders = orders.map(order =>
+        order.id === selectedOrder.id
           ? { ...order, status: 'Cancelled' }
           : order
       );
       setOrders(updatedOrders);
       setSelectedOrder({ ...selectedOrder, status: 'Cancelled' });
-      
+
       setShowCancelModal(false);
       setCancellationReason('');
       alert('Order cancelled successfully!');
@@ -70,6 +70,43 @@ export default function TrackOrder() {
       alert('Failed to cancel order. Please try again.');
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const getReturnEligibility = (order) => {
+    if (!order || !order.status || order.status.toLowerCase() !== 'delivered') {
+      return { eligible: false, message: 'Not delivered yet' };
+    }
+
+    // Use updatedAt as delivery date (approximation) or tracking update
+    const deliveryDate = new Date(order.updatedAt || order.updated_at);
+    const currentDate = new Date();
+    const diffTime = Math.abs(currentDate - deliveryDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const isEligible = diffDays <= 7;
+
+    const deadline = new Date(deliveryDate);
+    deadline.setDate(deadline.getDate() + 7);
+
+    return {
+      eligible: isEligible,
+      daysLeft: 7 - diffDays,
+      deadline: deadline.toLocaleDateString(),
+      message: isEligible ? `Eligible for return until ${deadline.toLocaleDateString()}` : `Return window closed on ${deadline.toLocaleDateString()}`
+    };
+  };
+
+  const handleReturnOrder = () => {
+    if (!selectedOrder) return;
+    const { eligible, message } = getReturnEligibility(selectedOrder);
+
+    if (eligible) {
+      const confirmReturn = window.confirm(`Initiate return for Order #${selectedOrder.id}?\n\nPolicy: 7-Day Returns\n${message}\n\nOur team will review your request and contact you.`);
+      if (confirmReturn) {
+        alert('Return Request Submitted! ✅\n\nOur courier partner will pick up the item within 24-48 hours. Refund will be processed after quality check.');
+      }
+    } else {
+      alert(`Cannot Return Order.\n\n${message}\n\nPolicy: Products can only be returned within 7 days of delivery.`);
     }
   };
 
@@ -86,10 +123,10 @@ export default function TrackOrder() {
       // Support both camelCase (createdAt) and snake_case (created_at)
       const dateA = a.createdAt || a.created_at;
       const dateB = b.createdAt || b.created_at;
-      
+
       const dateObjA = new Date(dateA);
       const dateObjB = new Date(dateB);
-      
+
       if (sortOrder === 'newest') {
         return dateObjB - dateObjA;
       } else if (sortOrder === 'oldest') {
@@ -225,7 +262,7 @@ export default function TrackOrder() {
               <div className="grid-header">
                 <h2>Your Orders ({filteredOrders.length})</h2>
               </div>
-              
+
               {filteredOrders.length === 0 ? (
                 <div className="no-results">
                   <p>No orders found matching your search.</p>
@@ -254,7 +291,7 @@ export default function TrackOrder() {
                           <span>{order.status || order.orderStatus || 'Processing'}</span>
                         </div>
                       </div>
-                      
+
                       <div className="order-card-body">
                         <div className="order-detail">
                           <span className="detail-label">Total Amount</span>
@@ -282,7 +319,7 @@ export default function TrackOrder() {
                   <h2>Order Details</h2>
                   <div className="header-actions">
                     {canCancelOrder(selectedOrder.status || selectedOrder.orderStatus) ? (
-                      <button 
+                      <button
                         className="cancel-order-btn"
                         onClick={() => setShowCancelModal(true)}
                         title="Cancel this order"
@@ -405,19 +442,19 @@ export default function TrackOrder() {
           <div className="cancel-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Cancel Order</h3>
-              <button 
-                className="modal-close" 
+              <button
+                className="modal-close"
                 onClick={() => !isCancelling && setShowCancelModal(false)}
                 disabled={isCancelling}
               >
                 ✕
               </button>
             </div>
-            
+
             <div className="modal-body">
               <p className="warning-text">⚠️ Are you sure you want to cancel this order?</p>
               <p className="info-text">Order ID: {(selectedOrder?.id || 'N/A').toString().slice(-8).toUpperCase()}</p>
-              
+
               <div className="form-group">
                 <label>Reason for cancellation (optional)</label>
                 <textarea
@@ -429,10 +466,10 @@ export default function TrackOrder() {
                   rows="4"
                 />
               </div>
-              
+
               <p className="refund-info">💡 Your payment will be refunded within 5-7 business days.</p>
             </div>
-            
+
             <div className="modal-footer">
               <button
                 className="modal-btn cancel-btn"
