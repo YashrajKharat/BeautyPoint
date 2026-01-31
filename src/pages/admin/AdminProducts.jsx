@@ -14,7 +14,8 @@ export default function AdminProducts() {
     price: '',
     category: 'cosmetics',
     stock: '',
-    image: null
+    image: null,
+    images: []
   });
 
   useEffect(() => {
@@ -43,20 +44,34 @@ export default function AdminProducts() {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Show preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      if (files.length > 6) {
+        alert('You can only upload up to 6 images');
+        return;
+      }
 
-      // Store file for upload
+      // Store files for upload
       setFormData(prev => ({
         ...prev,
-        image: file
+        images: files
       }));
+
+      // Generate previews
+      const newPreviews = [];
+      let loadedCount = 0;
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPreviews.push(reader.result);
+          loadedCount++;
+          if (loadedCount === files.length) {
+            setImagePreview(newPreviews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
@@ -70,11 +85,26 @@ export default function AdminProducts() {
       form.append('price', formData.price);
       form.append('category', formData.category);
       form.append('stock', formData.stock);
-
-      // Append image file if it's a File object
-      if (formData.image instanceof File) {
-        form.append('image', formData.image);
+      if (formData.colors) {
+        form.append('colors', formData.colors);
       }
+
+      // Append image files
+      if (formData.images && formData.images.length > 0) {
+        formData.images.forEach(file => {
+          if (file instanceof File) {
+            form.append('images', file);
+          }
+        });
+      } else if (formData.image instanceof File) {
+        // Fallback for single image if state wasn't cleared
+        form.append('images', formData.image);
+      }
+
+      // If we are editing and have existing images but no new files, we generally don't send 'images'
+      // The backend should preserve existing if 'images' is missing?
+      // Or we need to handle "existing images" preservation?
+      // The current backend Update logic appends new images.
 
       if (editingId) {
         await productAPI.update(editingId, form);
@@ -92,10 +122,12 @@ export default function AdminProducts() {
         price: '',
         category: 'cosmetics',
         stock: '',
-        image: null
+        image: null,
+        images: []
       });
       fetchProducts();
     } catch (error) {
+      console.error(error);
       alert('Error saving product: ' + error.message);
     }
   };
@@ -107,9 +139,18 @@ export default function AdminProducts() {
       price: product.price,
       category: product.category,
       stock: product.stock,
-      image: product.image
+      image: product.image,
+      images: [],
+      colors: Array.isArray(product.colors) ? product.colors.join(', ') : (product.colors || '')
     });
     setEditingId(product.id);
+    if (product.images && product.images.length > 0) {
+      setImagePreview(product.images);
+    } else if (product.image) {
+      setImagePreview(product.image); // Single string
+    } else {
+      setImagePreview(null);
+    }
     setShowForm(true);
   };
 
