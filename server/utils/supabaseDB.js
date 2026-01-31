@@ -140,10 +140,10 @@ export const productDB = {
 
 // Cart operations
 export const cartDB = {
-  async addItem(userId, productId, quantity) {
+  async addItem(userId, productId, quantity, selectedColor = null) {
     const { data, error } = await supabase
       .from('cart')
-      .insert([{ user_id: userId, product_id: productId, quantity }])
+      .insert([{ user_id: userId, product_id: productId, quantity, selected_color: selectedColor }])
       .select()
       .single();
 

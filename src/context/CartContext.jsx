@@ -26,9 +26,9 @@ export const CartProvider = ({ children }) => {
     setCartTotal(total);
   };
 
-  const addToCart = async (productId, quantity) => {
+  const addToCart = async (productId, quantity, color) => {
     try {
-      await cartAPI.addToCart({ productId, quantity });
+      await cartAPI.addToCart({ productId, quantity, color });
       await fetchCart();
     } catch (error) {
       console.error('Error adding to cart:', error);

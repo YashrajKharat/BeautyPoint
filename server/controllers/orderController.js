@@ -117,7 +117,8 @@ export const createOrder = async (req, res) => {
           order_id: order.id,
           product_id: productId,
           quantity: item.quantity,
-          price: product.price
+          price: product.price,
+          selected_color: item.selectedColor || item.selected_color
         });
       } catch (itemError) {
         // console.error('❌ Error adding order item:', itemError);

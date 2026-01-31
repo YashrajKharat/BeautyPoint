@@ -128,6 +128,22 @@ export default function Cart() {
                     <div className="item-info">
                       <h3 className="item-name">{productName}</h3>
                       <p className="item-price">₹{itemPrice?.toFixed(2) || '0.00'}</p>
+                      {item.selected_color && (
+                        <div className="item-variant" style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
+                          <span style={{ fontSize: '12px', color: '#666' }}>Color:</span>
+                          <div
+                            style={{
+                              width: '15px',
+                              height: '15px',
+                              borderRadius: '50%',
+                              backgroundColor: item.selected_color.startsWith('#') ? item.selected_color : '#eee',
+                              border: '1px solid #ccc'
+                            }}
+                            title={item.selected_color}
+                          />
+                          {!item.selected_color.startsWith('#') && <span style={{ fontSize: '12px' }}>{item.selected_color}</span>}
+                        </div>
+                      )}
                     </div>
 
                     <div className="quantity-controller">

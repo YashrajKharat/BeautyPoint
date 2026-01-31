@@ -51,7 +51,7 @@ export default function AdminProducts() {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
-      
+
       // Store file for upload
       setFormData(prev => ({
         ...prev,
@@ -70,12 +70,12 @@ export default function AdminProducts() {
       form.append('price', formData.price);
       form.append('category', formData.category);
       form.append('stock', formData.stock);
-      
+
       // Append image file if it's a File object
       if (formData.image instanceof File) {
         form.append('image', formData.image);
       }
-      
+
       if (editingId) {
         await productAPI.update(editingId, form);
         alert('Product updated successfully!');
@@ -143,8 +143,8 @@ export default function AdminProducts() {
     <div className="admin-products">
       <div className="products-header">
         <h1>Products Management</h1>
-        <button 
-          className="btn-add" 
+        <button
+          className="btn-add"
           onClick={() => setShowForm(true)}
         >
           Add New Product
@@ -155,7 +155,7 @@ export default function AdminProducts() {
         <div className="product-form-container">
           <form onSubmit={handleSubmit} className="product-form">
             <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-            
+
             <input
               type="text"
               name="name"
@@ -164,7 +164,7 @@ export default function AdminProducts() {
               onChange={handleInputChange}
               required
             />
-            
+
             <textarea
               name="description"
               placeholder="Product Description"
@@ -172,7 +172,7 @@ export default function AdminProducts() {
               onChange={handleInputChange}
               required
             ></textarea>
-            
+
             <input
               type="number"
               name="price"
@@ -181,7 +181,7 @@ export default function AdminProducts() {
               onChange={handleInputChange}
               required
             />
-            
+
             <select
               name="category"
               value={formData.category}
@@ -194,7 +194,7 @@ export default function AdminProducts() {
               <option value="perfume">Perfume</option>
               <option value="watches">Watches</option>
             </select>
-            
+
             <input
               type="number"
               name="stock"
@@ -203,22 +203,42 @@ export default function AdminProducts() {
               onChange={handleInputChange}
               required
             />
-            
+
+            <div className="form-group-colors">
+              <label htmlFor="colors-input">Available Colors (comma separated)</label>
+              <textarea
+                id="colors-input"
+                name="colors"
+                placeholder="Red, Blue, Green, #FF0000"
+                value={formData.colors || ''}
+                onChange={handleInputChange}
+                rows="2"
+              />
+            </div>
+
             <div className="image-upload-section">
-              <label htmlFor="image-input">Product Image</label>
+              <label htmlFor="image-input">Product Images (Max 6)</label>
               <input
                 id="image-input"
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
               />
-              {imagePreview && (
-                <div className="image-preview">
-                  <img src={imagePreview} alt="Preview" />
-                </div>
-              )}
+              <div className="image-previews-container" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                {imagePreview && !Array.isArray(imagePreview) && (
+                  <div className="image-preview">
+                    <img src={imagePreview} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
+                  </div>
+                )}
+                {Array.isArray(imagePreview) && imagePreview.map((src, idx) => (
+                  <div key={idx} className="image-preview">
+                    <img src={src} alt={`Preview ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
+                  </div>
+                ))}
+              </div>
             </div>
-            
+
             <div className="form-buttons">
               <button type="submit" className="btn-save">
                 {editingId ? 'Update' : 'Create'}
@@ -255,13 +275,13 @@ export default function AdminProducts() {
                   <td>{product.stock}</td>
                   <td>{product.description?.substring(0, 30)}...</td>
                   <td className="actions">
-                    <button 
+                    <button
                       className="btn-edit"
                       onClick={() => handleEdit(product)}
                     >
                       Edit
                     </button>
-                    <button 
+                    <button
                       className="btn-delete"
                       onClick={() => handleDelete(product.id)}
                     >

@@ -43,7 +43,7 @@ const upload = multer({
   }
 });
 
-export const uploadMiddleware = upload.single('image');
+export const uploadMiddleware = upload.array('images', 6);
 
 export const getImageUrl = (filename) => {
   return `/uploads/${filename}`;

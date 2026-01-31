@@ -32,29 +32,29 @@ export default function Checkout() {
   // Validation rules for checkout form
   const validateCheckoutForm = () => {
     const errors = {};
-    
+
     if (!formData.street.trim()) {
       errors.street = true;
     }
-    
+
     if (!formData.city.trim()) {
       errors.city = true;
     }
-    
+
     if (!formData.state.trim()) {
       errors.state = true;
     }
-    
+
     if (!formData.zipCode.trim()) {
       errors.zipCode = true;
     } else if (!/^\d{5,10}$/.test(formData.zipCode.replace(/\s/g, ''))) {
       errors.zipCode = true;
     }
-    
+
     if (!formData.country.trim()) {
       errors.country = true;
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -80,7 +80,7 @@ export default function Checkout() {
 
     // Check if coming from "Buy Now" button - read BEFORE clearing
     const productFromSession = sessionStorage.getItem('checkoutProduct');
-    
+
     if (productFromSession) {
       // Coming from "Buy Now" button
       try {
@@ -136,7 +136,7 @@ export default function Checkout() {
 
     setCouponLoading(true);
     setCouponError('');
-    
+
     try {
       const response = await couponAPI.validateCoupon(couponCode, checkoutSubtotal);
       setAppliedCoupon(response.data.data);
@@ -157,12 +157,12 @@ export default function Checkout() {
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    
+
     // Validate form before processing
     if (!validateCheckoutForm()) {
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
@@ -175,17 +175,18 @@ export default function Checkout() {
       };
 
       const orderData = { shippingAddress };
-      
+
       // Calculate totals
       const shippingCost = calculateShippingCost();
       const subtotalAfterDiscount = checkoutSubtotal - discountAmount;
       const totalAmount = subtotalAfterDiscount + shippingCost;
-      
+
       if (checkoutProduct) {
         orderData.items = [{
           productId: checkoutProduct.id,
           quantity: checkoutProductQuantity,
-          price: checkoutProduct.price
+          price: checkoutProduct.price,
+          selectedColor: checkoutProduct.selectedColor
         }];
       } else {
         // Items from cart
@@ -195,7 +196,8 @@ export default function Checkout() {
           return {
             productId: product?.id || item.product_id,
             quantity: item.quantity,
-            price: itemPrice
+            price: itemPrice,
+            selectedColor: item.selected_color
           };
         });
       }
@@ -211,13 +213,13 @@ export default function Checkout() {
       }
 
       const response = await orderAPI.createOrder(orderData);
-      
+
       if (checkoutProduct) {
         sessionStorage.removeItem('checkoutProduct');
       } else {
         await clearCart();
       }
-      
+
       navigate(`/order-confirmation/${response.data.order.id}`);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to place order');
@@ -229,7 +231,7 @@ export default function Checkout() {
   const cartSubtotal = (cart?.length || 0) > 0 ? cart.reduce((total, item) => {
     // Try to get product details from various possible locations
     const product = item.products || item.product || item.productId;
-    
+
     // Get price from product object or fallback to item.price
     let itemPrice = 0;
     if (product && typeof product === 'object') {
@@ -237,26 +239,26 @@ export default function Checkout() {
     } else {
       itemPrice = item.price || 0;
     }
-    
+
     const qty = item.quantity || 1;
     const itemTotal = itemPrice * qty;
-    
-    console.log('Cart item calculation:', { 
-      productName: product?.name || 'Unknown', 
-      price: itemPrice, 
-      qty, 
+
+    console.log('Cart item calculation:', {
+      productName: product?.name || 'Unknown',
+      price: itemPrice,
+      qty,
       itemTotal,
       hasProducts: !!item.products,
       hasProduct: !!item.product,
       hasProductId: !!item.productId
     });
-    
+
     return total + itemTotal;
   }, 0) : 0;
 
   console.log('=== CHECKOUT DEBUG ===');
   console.log('Full cart array:', cart);
-  console.log('Checkout Summary:', { 
+  console.log('Checkout Summary:', {
     isCheckoutProduct: !!checkoutProduct,
     cartLength: cart?.length,
     cartSubtotal,
@@ -267,7 +269,7 @@ export default function Checkout() {
   console.log('=== END DEBUG ===');
 
   const checkoutSubtotal = checkoutProduct ? (checkoutProduct.price * checkoutProductQuantity) : cartSubtotal;
-  
+
   const calculateShippingCost = () => {
     return checkoutSubtotal > 300 ? 0 : 120;
   };
@@ -296,7 +298,7 @@ export default function Checkout() {
               <div className="section-header">
                 <h2>📍 Shipping Address</h2>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="street">Street Address *</label>
                 <input
@@ -375,7 +377,7 @@ export default function Checkout() {
               <div className="section-header">
                 <h2>💳 Payment Method</h2>
               </div>
-              
+
               <div className="payment-option">
                 <input type="radio" id="cod" name="payment" value="cod" defaultChecked />
                 <label htmlFor="cod" className="payment-label">
@@ -393,7 +395,7 @@ export default function Checkout() {
               <div className="section-header">
                 <h2>🎟️ Apply Coupon Code</h2>
               </div>
-              
+
               {appliedCoupon ? (
                 <div className="applied-coupon">
                   <div className="coupon-badge">
@@ -401,7 +403,7 @@ export default function Checkout() {
                     <span className="discount-badge">{appliedCoupon.discountPercent}% OFF</span>
                   </div>
                   <p className="coupon-desc">{appliedCoupon.description}</p>
-                  <button 
+                  <button
                     type="button"
                     onClick={handleRemoveCoupon}
                     className="remove-coupon-btn"
@@ -436,9 +438,9 @@ export default function Checkout() {
             </div>
 
             {/* Place Order Button */}
-            <button 
-              type="submit" 
-              disabled={isLoading} 
+            <button
+              type="submit"
+              disabled={isLoading}
               className="place-order-btn"
             >
               {isLoading ? '⏳ Processing...' : '✓ Place Order'}
@@ -458,9 +460,22 @@ export default function Checkout() {
                 <div className="summary-item">
                   <div className="item-details">
                     <span className="item-name">{checkoutProduct.name}</span>
+                    {checkoutProduct.selectedColor && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#666', marginBottom: '4px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          backgroundColor: checkoutProduct.selectedColor.startsWith('#') ? checkoutProduct.selectedColor : '#ccc',
+                          border: '1px solid #ddd'
+                        }}></span>
+                        {checkoutProduct.selectedColor}
+                      </div>
+                    )}
                     <div className="item-qty-selector">
                       <label>Quantity: </label>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setCheckoutProductQuantity(Math.max(1, checkoutProductQuantity - 1))}
                         className="qty-btn"
@@ -474,7 +489,7 @@ export default function Checkout() {
                         className="qty-input"
                         min="1"
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setCheckoutProductQuantity(checkoutProductQuantity + 1)}
                         className="qty-btn"
@@ -498,6 +513,19 @@ export default function Checkout() {
                       <div className="item-details">
                         <span className="item-name">{itemName}</span>
                         <span className="item-qty">Qty: {qty}</span>
+                        {item.selected_color && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#666' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              width: '10px',
+                              height: '10px',
+                              borderRadius: '50%',
+                              backgroundColor: item.selected_color.startsWith('#') ? item.selected_color : '#ccc',
+                              border: '1px solid #ddd'
+                            }}></span>
+                            {item.selected_color}
+                          </div>
+                        )}
                       </div>
                       <span className="item-price">₹{(itemPrice * qty).toFixed(2)}</span>
                     </div>

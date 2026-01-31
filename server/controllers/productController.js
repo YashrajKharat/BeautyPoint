@@ -59,42 +59,74 @@ export const getProductById = async (req, res) => {
   }
 };
 
+const parseColors = (colorsInput) => {
+  if (!colorsInput) return [];
+  if (Array.isArray(colorsInput)) return colorsInput;
+  try {
+    return JSON.parse(colorsInput);
+  } catch (e) {
+    return colorsInput.split(',').map(c => c.trim()).filter(c => c);
+  }
+};
+
 export const createProduct = async (req, res) => {
   try {
-    const { name, category, price, description, stock } = req.body;
+    const { name, category, price, description, stock, colors } = req.body;
 
     // Validate required fields
     if (!name || !category || price === undefined || price === null || price === '') {
       return res.status(400).json({ message: 'Name, category, and price are required' });
     }
 
-    // Handle image - store in Supabase Storage
-    let image = null;
-    if (req.file) {
-      const fs = await import('fs');
-      const filepath = req.file.path;
+    // Handle images - store in Supabase Storage
+    let images = [];
+    const fs = await import('fs');
 
+    // Handle multiple files
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const filepath = file.path;
+        try {
+          const fileBuffer = fs.readFileSync(filepath);
+          const fileName = `${Date.now()}-${file.originalname}`;
+          const mimeType = file.mimetype || 'image/jpeg';
+
+          // Upload to Supabase Storage
+          const publicUrl = await storageDB.uploadProductImage(fileBuffer, fileName, mimeType);
+          images.push(publicUrl);
+
+          // Delete the uploaded file from local server
+          fs.unlinkSync(filepath);
+        } catch (fileError) {
+          console.error('File upload error:', fileError);
+          // Fallback to local path if storage fails
+          images.push(`/uploads/${file.filename}`);
+        }
+      }
+    } else if (req.file) {
+      // Fallback for single file upload if middleware wasn't updated
+      const filepath = req.file.path;
       try {
         const fileBuffer = fs.readFileSync(filepath);
         const fileName = `${Date.now()}-${req.file.originalname}`;
         const mimeType = req.file.mimetype || 'image/jpeg';
-
-        // Upload to Supabase Storage
-        image = await storageDB.uploadProductImage(fileBuffer, fileName, mimeType);
-
-        // Delete the uploaded file from local server
+        const publicUrl = await storageDB.uploadProductImage(fileBuffer, fileName, mimeType);
+        images.push(publicUrl);
         fs.unlinkSync(filepath);
-      } catch (fileError) {
-        console.error('File upload error:', fileError);
-        // Fallback to local path if storage fails (though we prefer storage)
-        image = `/uploads/${req.file.filename}`;
+      } catch (e) {
+        images.push(`/uploads/${req.file.filename}`);
       }
     } else if (req.body.image) {
-      image = req.body.image;
+      images.push(req.body.image);
     }
 
-    if (!image) {
-      return res.status(400).json({ message: 'Image is required' });
+    // Legacy support: if req.body.images is passed as string url
+    if (req.body.images && typeof req.body.images === 'string') {
+      images.push(req.body.images);
+    }
+
+    if (images.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required' });
     }
 
     // Build product data
@@ -103,7 +135,9 @@ export const createProduct = async (req, res) => {
       category: String(category).trim(),
       price: parseFloat(price),
       stock: parseInt(stock) || 0,
-      image: image
+      image: images[0], // Primary image for backward compatibility
+      images: images,    // Array of all images
+      colors: parseColors(colors) // Array of colors
     };
 
     if (description && description.trim()) {
@@ -126,31 +160,59 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     let updateData = { ...req.body };
+    const fs = await import('fs');
 
-    // If new file uploaded, upload to storage and update image path
-    if (req.file) {
-      const fs = await import('fs');
-      const filepath = req.file.path;
+    // Handle new images
+    if (req.files && req.files.length > 0) {
+      const newImages = [];
+      for (const file of req.files) {
+        const filepath = file.path;
+        try {
+          const fileBuffer = fs.readFileSync(filepath);
+          const fileName = `${Date.now()}-${file.originalname}`;
+          const mimeType = file.mimetype || 'image/jpeg';
 
-      try {
-        const fileBuffer = fs.readFileSync(filepath);
-        const fileName = `${Date.now()}-${req.file.originalname}`;
-        const mimeType = req.file.mimetype || 'image/jpeg';
+          const publicUrl = await storageDB.uploadProductImage(fileBuffer, fileName, mimeType);
+          newImages.push(publicUrl);
 
-        const imageUrl = await storageDB.uploadProductImage(fileBuffer, fileName, mimeType);
-        updateData.image = imageUrl;
-
-        fs.unlinkSync(filepath);
-      } catch (error) {
-        console.error('File upload error:', error);
-        // Fallback
-        updateData.image = `/uploads/${req.file.filename}`;
+          fs.unlinkSync(filepath);
+        } catch (error) {
+          console.error('File upload error:', error);
+          newImages.push(`/uploads/${file.filename}`);
+        }
       }
+
+      // If "keepOldImages" flag is true or not specified, we might want to append. 
+      // But for simplicity, let's assume if files are sent, we append them to existing? 
+      // Or maybe the frontend sends the old images as text?
+      // Let's implement: merge new images with existing 'images' array from body if present
+
+      let existingImages = [];
+      if (updateData.existingImages) {
+        existingImages = Array.isArray(updateData.existingImages)
+          ? updateData.existingImages
+          : JSON.parse(updateData.existingImages);
+      } else {
+        // If we don't have explicit existingImages, we might fetch current product to preserve them?
+        // For now, let's assume the frontend sends everything or we overwrite if typical form behavior.
+        // Actually, safer to fetch current if we want to append.
+        const currentProduct = await productDB.findById(req.params.id);
+        if (currentProduct && currentProduct.images) {
+          existingImages = currentProduct.images;
+        }
+      }
+
+      updateData.images = [...existingImages, ...newImages];
+      updateData.image = updateData.images[0]; // Update primary image
     }
 
     // Convert numeric fields
     if (updateData.price) updateData.price = parseFloat(updateData.price);
     if (updateData.stock) updateData.stock = parseInt(updateData.stock);
+    if (updateData.colors) updateData.colors = parseColors(updateData.colors);
+
+    // Clean up fields that shouldn't be in DB directly if they aren't columns
+    delete updateData.existingImages;
 
     const product = await productDB.update(req.params.id, updateData);
 

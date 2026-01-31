@@ -3,7 +3,7 @@ import { cartDB, productDB } from '../utils/supabaseDB.js';
 export const getCart = async (req, res) => {
   try {
     const items = await cartDB.getByUser(req.userId);
-    
+
     // Ensure products are included - if not, fetch them
     let enrichedItems = items || [];
     if (enrichedItems.length > 0 && !enrichedItems[0].products) {
@@ -15,7 +15,7 @@ export const getCart = async (req, res) => {
         })
       );
     }
-    
+
     res.json({ userId: req.userId, items: enrichedItems });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching cart', error: error.message });
@@ -24,23 +24,26 @@ export const getCart = async (req, res) => {
 
 export const addToCart = async (req, res) => {
   try {
-    const { productId, quantity } = req.body;
-    
+    const { productId, quantity, color } = req.body;
+
     const product = await productDB.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Check if item already in cart
+    // Check if item already in cart with same color
     const cartItems = await cartDB.getByUser(req.userId);
-    const existingItem = cartItems?.find(item => item.product_id === productId);
-    
+    const existingItem = cartItems?.find(item =>
+      item.product_id === productId &&
+      (item.selected_color === color || (!item.selected_color && !color))
+    );
+
     if (existingItem) {
       // Update quantity
       await cartDB.updateQuantity(existingItem.id, existingItem.quantity + quantity);
     } else {
       // Add new item
-      await cartDB.addItem(req.userId, productId, quantity);
+      await cartDB.addItem(req.userId, productId, quantity, color);
     }
 
     const updatedCart = await cartDB.getByUser(req.userId);
@@ -53,15 +56,15 @@ export const addToCart = async (req, res) => {
 export const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.body;
-    
+
     // Find the cart item by productId and userId
     const cartItems = await cartDB.getByUser(req.userId);
     const cartItem = cartItems?.find(item => item.product_id === productId);
-    
+
     if (!cartItem) {
       return res.status(404).json({ message: 'Item not found in cart' });
     }
-    
+
     await cartDB.removeItem(cartItem.id);
     const updatedCart = await cartDB.getByUser(req.userId);
     res.json({ message: 'Item removed from cart', cart: updatedCart });
@@ -73,11 +76,11 @@ export const removeFromCart = async (req, res) => {
 export const updateCartItem = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    
+
     // Find the cart item by productId and userId
     const cartItems = await cartDB.getByUser(req.userId);
     const cartItem = cartItems?.find(item => item.product_id === productId);
-    
+
     if (!cartItem) {
       return res.status(404).json({ message: 'Item not found in cart' });
     }
