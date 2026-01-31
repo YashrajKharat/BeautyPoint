@@ -112,14 +112,30 @@ export default function TrackOrder() {
     };
   };
 
-  const handleReturnOrder = () => {
+  const handleReturnOrder = async () => {
     if (!selectedOrder) return;
     const { eligible, message } = getReturnEligibility(selectedOrder);
 
     if (eligible) {
       const confirmReturn = window.confirm(`Initiate return for Order #${selectedOrder.id}?\n\nPolicy: 7-Day Returns\n${message}\n\nOur team will review your request and contact you.`);
       if (confirmReturn) {
-        alert('Return Request Submitted! ✅\n\nOur courier partner will pick up the item within 24-48 hours. Refund will be processed after quality check.');
+        try {
+          // Send update to backend
+          await orderAPI.updateOrderStatus(selectedOrder.id, { status: 'return-requested' });
+
+          alert('Return Request Submitted! ✅\n\nStatus updated to "Return Requested". Our courier partner will pick up the item within 24-48 hours.');
+
+          // Refresh local state to show new status immediately
+          const updatedOrders = orders.map(o =>
+            o.id === selectedOrder.id ? { ...o, status: 'return-requested' } : o
+          );
+          setOrders(updatedOrders);
+          setSelectedOrder({ ...selectedOrder, status: 'return-requested' });
+
+        } catch (error) {
+          console.error('Error submitting return:', error);
+          alert('Failed to submit return request. Please try again.');
+        }
       }
     } else {
       alert(`Cannot Return Order.\n\n${message}\n\nPolicy: Products can only be returned within 7 days of delivery.`);

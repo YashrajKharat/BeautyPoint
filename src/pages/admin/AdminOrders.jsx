@@ -40,7 +40,7 @@ export default function AdminOrders() {
     }
   };
 
-  const statuses = ['pending', 'confirmed', 'shipped', 'out-for-delivery', 'delivered', 'cancelled'];
+  const statuses = ['pending', 'confirmed', 'shipped', 'out-for-delivery', 'delivered', 'cancelled', 'return-requested', 'returned'];
 
   return (
     <div className="admin-orders">
@@ -72,11 +72,11 @@ export default function AdminOrders() {
                 const status = order.status || order.orderStatus || 'pending';
                 const orderDate = order.created_at || order.createdAt;
                 const shippingAddress = order.shipping_address || order.deliveryAddress || {};
-                const addressStr = typeof shippingAddress === 'string' 
-                  ? shippingAddress 
+                const addressStr = typeof shippingAddress === 'string'
+                  ? shippingAddress
                   : `${shippingAddress.street || ''}, ${shippingAddress.city || ''}`;
                 const isCancelled = status.toLowerCase() === 'cancelled';
-                
+
                 return (
                   <tr key={order.id}>
                     <td>{order.id?.substring(0, 8)}...</td>
