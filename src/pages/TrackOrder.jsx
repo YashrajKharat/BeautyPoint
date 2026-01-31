@@ -78,8 +78,24 @@ export default function TrackOrder() {
       return { eligible: false, message: 'Not delivered yet' };
     }
 
-    // Use updatedAt as delivery date (approximation) or tracking update
-    const deliveryDate = new Date(order.updatedAt || order.updated_at);
+    // Use updatedAt as delivery date, fallback to createdAt if missing
+    let dateStr = order.updatedAt || order.updated_at || order.createdAt || order.created_at;
+    let deliveryDate = new Date(dateStr);
+
+    // Robust date validation
+    if (isNaN(deliveryDate.getTime())) {
+      console.warn('Invalid date found in order:', order);
+      // Try specifically createdAt if first attempt failed
+      const created = order.createdAt || order.created_at;
+      if (created) {
+        deliveryDate = new Date(created);
+      } else {
+        // Last fallback to current time to avoid crashing (making it eligible)
+        // or return ineligible
+        return { eligible: false, message: 'Order date information missing' };
+      }
+    }
+
     const currentDate = new Date();
     const diffTime = Math.abs(currentDate - deliveryDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
