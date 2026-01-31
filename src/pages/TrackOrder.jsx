@@ -120,8 +120,8 @@ export default function TrackOrder() {
       const confirmReturn = window.confirm(`Initiate return for Order #${selectedOrder.id}?\n\nPolicy: 7-Day Returns\n${message}\n\nOur team will review your request and contact you.`);
       if (confirmReturn) {
         try {
-          // Send update to backend
-          await orderAPI.updateOrderStatus(selectedOrder.id, { status: 'return-requested' });
+          // Send return request to backend using user-specific endpoint
+          await orderAPI.requestReturn(selectedOrder.id);
 
           alert('Return Request Submitted! ✅\n\nStatus updated to "Return Requested". Our courier partner will pick up the item within 24-48 hours.');
 
