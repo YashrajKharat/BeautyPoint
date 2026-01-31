@@ -1,12 +1,13 @@
 import express from 'express';
-import { 
-  createOrder, 
-  getOrders, 
-  getOrderById, 
-  trackOrder, 
-  updateOrderStatus, 
+import {
+  createOrder,
+  getOrders,
+  getOrderById,
+  trackOrder,
+  updateOrderStatus,
   cancelOrder,
-  getAllOrders
+  getAllOrders,
+  requestReturn
 } from '../controllers/orderController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
@@ -19,6 +20,7 @@ router.get('/', authMiddleware, getOrders);
 router.get('/:orderId', authMiddleware, getOrderById);
 router.get('/:orderId/track', authMiddleware, trackOrder);
 router.put('/:orderId/cancel', authMiddleware, cancelOrder);
+router.put('/:orderId/return', authMiddleware, requestReturn);
 
 // Admin only routes
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllOrders);

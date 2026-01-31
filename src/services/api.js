@@ -61,6 +61,7 @@ export const orderAPI = {
   trackOrder: (id) => api.get(`/orders/${id}/track`),
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
   cancelOrder: (id, data) => api.put(`/orders/${id}/cancel`, data),
+  requestReturn: (id) => api.put(`/orders/${id}/return`),
   getAllOrders: () => api.get('/orders/admin/all')
 };
 

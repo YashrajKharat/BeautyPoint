@@ -322,3 +322,30 @@ export const getAllOrders = async (req, res) => {
     res.status(500).json({ message: 'Error fetching orders', error: error.message });
   }
 };
+
+export const requestReturn = async (req, res) => {
+  try {
+    const order = await orderDB.getById(req.params.orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.user_id !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ message: 'Only delivered orders can be returned' });
+    }
+
+    const updatedOrder = await orderDB.update(req.params.orderId, { status: 'return-requested' });
+
+    // Enrich and send email notification to user (optional but good practice)
+    // For now just return success
+
+    res.json({ message: 'Return requested successfully', order: enrichOrderWithTracking(updatedOrder) });
+  } catch (error) {
+    res.status(500).json({ message: 'Error requesting return', error: error.message });
+  }
+};
