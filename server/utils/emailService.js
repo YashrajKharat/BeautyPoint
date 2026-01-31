@@ -26,10 +26,16 @@ const transporter = nodemailer.createTransport({
   logger: true // Log information to console
 });
 
-// Helper to send mail with timeout
+// Helper to send mail asynchronously (Fire & Forget)
 const sendMailWithTimeout = async (mailOptions) => {
-  // FAST PATH: Skip actual email sending to prevent delays
-  console.log('📧 Email sending SKIPPED to ensure fast response:', mailOptions.to);
+  // Return immediately to keep UI fast
+  // We process the email in the background
+  console.log('🚀 Triggering background email to:', mailOptions.to);
+
+  transporter.sendMail(mailOptions)
+    .then(info => console.log('✅ Background email sent:', info.messageId))
+    .catch(error => console.error('❌ Background email failed:', error.message));
+
   return true;
 };
 
