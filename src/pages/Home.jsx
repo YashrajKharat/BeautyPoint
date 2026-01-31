@@ -40,7 +40,7 @@ export default function Home() {
   const stats = [
     { label: 'Premium Brands', value: '500+', icon: '👑' },
     { label: 'Happy Customers', value: '1M+', icon: '💕' },
-    { label: 'Free Returns', value: '30 Days', icon: '🔄' },
+    { label: 'Free Returns', value: '7 Days', icon: '🔄' },
     { label: 'Express Delivery', value: '1-2 Days', icon: '🚚' }
   ];
 
