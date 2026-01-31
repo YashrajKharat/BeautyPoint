@@ -327,6 +327,24 @@ export default function TrackOrder() {
                         ✕ Cancel Order
                       </button>
                     ) : null}
+
+                    {/* Return Button Logic */}
+                    {(selectedOrder.status || selectedOrder.orderStatus)?.toLowerCase() === 'delivered' && (
+                      <button
+                        className={`cancel-order-btn ${!getReturnEligibility(selectedOrder).eligible ? 'disabled' : ''}`}
+                        style={{
+                          backgroundColor: getReturnEligibility(selectedOrder).eligible ? '#FF9800' : '#ccc',
+                          borderColor: getReturnEligibility(selectedOrder).eligible ? '#F57C00' : '#bbb',
+                          cursor: getReturnEligibility(selectedOrder).eligible ? 'pointer' : 'not-allowed',
+                          marginLeft: '10px'
+                        }}
+                        onClick={handleReturnOrder}
+                        title={getReturnEligibility(selectedOrder).message}
+                      >
+                        {getReturnEligibility(selectedOrder).eligible ? '↩ Return Order' : 'Start Return'}
+                      </button>
+                    )}
+
                     <button className="close-details" onClick={() => setSelectedOrder(null)}>✕</button>
                   </div>
                 </div>
