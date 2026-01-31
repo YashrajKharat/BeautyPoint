@@ -41,7 +41,7 @@ export default function TrackOrder() {
     if (!status) {
       return true;
     }
-    const nonCancelableStatuses = ['Shipped', 'In Transit', 'In transit', 'Delivered', 'Cancelled'];
+    const nonCancelableStatuses = ['Shipped', 'In Transit', 'In transit', 'Delivered', 'Cancelled', 'return-requested', 'returned'];
     return !nonCancelableStatuses.some(s => s.toLowerCase() === status.toLowerCase());
   };
 
