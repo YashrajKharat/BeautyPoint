@@ -65,8 +65,13 @@ const parseColors = (colorsInput) => {
   try {
     return JSON.parse(colorsInput);
   } catch (e) {
-    // Split by comma, newline, or pipe, and clean up quotes
-    return colorsInput.split(/[\n,]+/).map(c => c.replace(/['"]/g, '').trim()).filter(c => c);
+    const cleaned = colorsInput.replace(/['"]/g, '').trim();
+    if (cleaned.includes(',')) {
+      // If commas exist, assume user is using them as separators (allows "Light Blue, Dark Blue")
+      return cleaned.split(/[\n,]+/).map(c => c.trim()).filter(c => c);
+    }
+    // Fallback: split by spaces or newlines if no commas
+    return cleaned.split(/[\s\n]+/).map(c => c.trim()).filter(c => c);
   }
 };
 
