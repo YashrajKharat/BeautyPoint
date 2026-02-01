@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://beautypoint.onrender.com/</loc>
-    <lastmod>2024-01-31</lastmod>
+    <loc>https://beauty-point-hqp4.vercel.app/</loc>
+    <lastmod>2024-02-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://beautypoint.onrender.com/products</loc>
-    <lastmod>2024-01-31</lastmod>
+    <loc>https://beauty-point-hqp4.vercel.app/products</loc>
+    <lastmod>2024-02-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://beautypoint.onrender.com/track</loc>
-    <lastmod>2024-01-31</lastmod>
+    <loc>https://beauty-point-hqp4.vercel.app/track</loc>
+    <lastmod>2024-02-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://beautypoint.onrender.com/contact</loc>
-    <lastmod>2024-01-31</lastmod>
+    <loc>https://beauty-point-hqp4.vercel.app/contact</loc>
+    <lastmod>2024-02-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
