@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute.jsx';
-import Navbar from './components/navbar.jsx';
+import Navbar from './components/Navbar.jsx';
 import AdminNavbar from './components/AdminNavbar.jsx';
 import AdminWrapper from './components/AdminWrapper.jsx';
 import ChatBot from './components/ChatBot.jsx';
@@ -38,7 +38,6 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />

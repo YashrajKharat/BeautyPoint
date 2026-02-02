@@ -13,7 +13,7 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const isAdminPanel = location.pathname.startsWith('/admin');
-  
+
   // Calculate total items in cart
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -60,7 +60,7 @@ export default function Navbar() {
           <li><button className="nav-link" onClick={() => { navigate('/products'); setIsMenuOpen(false); }}>
             <span className="nav-icon">📦</span> Products
           </button></li>
-          <li><button className="nav-link" onClick={() => { 
+          <li><button className="nav-link" onClick={() => {
             if (location.pathname !== '/') {
               navigate('/');
               setTimeout(() => {
@@ -69,7 +69,7 @@ export default function Navbar() {
             } else {
               document.querySelector('.ultra-contact-section')?.scrollIntoView({ behavior: 'smooth' });
             }
-            setIsMenuOpen(false); 
+            setIsMenuOpen(false);
           }}>
             <span className="nav-icon">📧</span> Contact
           </button></li>
@@ -82,7 +82,7 @@ export default function Navbar() {
         <div className={`nav-actions ${isMenuOpen ? 'active' : ''}`}>
           {isAuthenticated ? (
             <>
-              <button 
+              <button
                 className="nav-link cart-link"
                 onClick={() => { navigate('/cart'); setIsMenuOpen(false); }}
               >
@@ -94,7 +94,7 @@ export default function Navbar() {
               </button>
 
               {userRole === 'admin' && (
-                <button 
+                <button
                   className="nav-link admin-link"
                   onClick={() => { navigate('/admin/dashboard'); setIsMenuOpen(false); }}
                 >
@@ -103,7 +103,7 @@ export default function Navbar() {
               )}
 
               <div className="nav-user-container">
-                <button 
+                <button
                   className="nav-user-btn"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
@@ -114,7 +114,7 @@ export default function Navbar() {
 
                 {showUserMenu && (
                   <div className="user-dropdown">
-                    <button 
+                    <button
                       className="dropdown-item"
                       onClick={handleLogout}
                     >
@@ -125,23 +125,15 @@ export default function Navbar() {
               </div>
             </>
           ) : (
-            <>
-              <button 
-                className="nav-link login-link"
-                onClick={() => { navigate('/login'); setIsMenuOpen(false); }}
-              >
-                <span className="auth-icon">🔓</span> Login
-              </button>
-              <button 
-                className="nav-link signup-link"
-                onClick={() => { navigate('/register'); setIsMenuOpen(false); }}
-              >
-                <span className="auth-icon">✍️</span> Sign Up
-              </button>
-            </>
+            <button
+              className="nav-link login-link"
+              onClick={() => { navigate('/login'); setIsMenuOpen(false); }}
+            >
+              <span className="auth-icon">🔓</span> Login
+            </button>
           )}
         </div>
       </div>
-    </nav>
+    </nav >
   );
 }
