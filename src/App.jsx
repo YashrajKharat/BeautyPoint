@@ -9,7 +9,7 @@ import ChatBot from './components/ChatBot.jsx';
 import Home from './pages/Home.jsx';
 import Products from './pages/Products.jsx';
 import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
+// import Register from './pages/Register.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Cart from './pages/Cart.jsx';
