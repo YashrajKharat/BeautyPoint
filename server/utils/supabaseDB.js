@@ -32,6 +32,19 @@ export const userDB = {
     return data;
   },
 
+  async findByPhone(phone) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    return data;
+  },
+
   async findById(id) {
     const { data, error } = await supabase
       .from('users')

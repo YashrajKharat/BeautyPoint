@@ -43,6 +43,23 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const loginWithWhatsApp = useCallback(async (phone, name) => {
+    setIsLoading(true);
+    try {
+      const response = await userAPI.whatsappLogin({ phone, name });
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userRole', response.data.user.role);
+      setToken(response.data.token);
+      setUserRole(response.data.user.role);
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'WhatsApp login failed';
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
@@ -79,7 +96,9 @@ export const AuthProvider = ({ children }) => {
       isLoading,
       isAuthenticated: !!token,
       register,
+      register,
       login,
+      loginWithWhatsApp,
       logout,
       getProfile,
       updateProfile

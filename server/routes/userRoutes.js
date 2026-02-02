@@ -1,10 +1,11 @@
 import express from 'express';
-import { 
-  registerUser, 
-  loginUser, 
-  getUserProfile, 
-  updateUserProfile, 
-  getAllUsers, 
+import {
+  registerUser,
+  loginUser,
+  whatsappLogin,
+  getUserProfile,
+  updateUserProfile,
+  getAllUsers,
   deleteUser,
   sendPasswordResetOTP,
   verifyPasswordResetOTP,
@@ -14,10 +15,10 @@ import {
 } from '../controllers/userController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
-import { 
-  validateRegister, 
+import {
+  validateRegister,
   validateLogin,
-  handleValidationErrors 
+  handleValidationErrors
 } from '../middleware/validationMiddleware.js';
 import { sendOrderConfirmationSMS } from '../utils/smsService.js';
 
@@ -26,6 +27,7 @@ const router = express.Router();
 // ✅ SECURITY: Validation added to auth routes
 router.post('/register', validateRegister, handleValidationErrors, registerUser);
 router.post('/login', validateLogin, handleValidationErrors, loginUser);
+router.post('/whatsapp-login', whatsappLogin);
 router.get('/check-admin-exists', checkAdminExists);
 router.get('/profile', authMiddleware, getUserProfile);
 router.put('/profile', authMiddleware, updateUserProfile);
@@ -45,15 +47,15 @@ router.delete('/:id', authMiddleware, adminMiddleware, deleteUser);
 router.post('/test-sms', async (req, res) => {
   try {
     const { phone, name } = req.body;
-    
+
     if (!phone || !name) {
       return res.status(400).json({ message: 'Phone and name required' });
     }
-    
+
     console.log('🧪 [TEST] SMS endpoint called with:', { phone, name });
     const result = await sendOrderConfirmationSMS(phone, 'TEST123', name);
-    
-    res.json({ 
+
+    res.json({
       message: 'Test SMS sent',
       success: result,
       phone: phone,
@@ -61,9 +63,9 @@ router.post('/test-sms', async (req, res) => {
     });
   } catch (error) {
     console.error('🧪 [TEST] Error:', error);
-    res.status(500).json({ 
-      message: 'Error sending test SMS', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error sending test SMS',
+      error: error.message
     });
   }
 });

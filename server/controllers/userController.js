@@ -81,6 +81,42 @@ export const loginUser = async (req, res) => {
   }
 };
 
+export const whatsappLogin = async (req, res) => {
+  try {
+    const { phone, name, email } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    let user = await userDB.findByPhone(phone);
+
+    if (!user) {
+      // Create new user (Sign Up)
+      // Generate random password for WhatsApp users
+      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await userDB.create({
+        name: name || 'User',
+        email: email || null, // Email is optional now
+        phone: phone,
+        password: hashedPassword,
+        role: 'user'
+      });
+    }
+
+    const token = generateToken(user.id);
+    res.json({
+      message: 'WhatsApp login successful',
+      token,
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'WhatsApp login failed', error: error.message });
+  }
+};
+
 export const getUserProfile = async (req, res) => {
   try {
     const user = await userDB.findById(req.userId);
