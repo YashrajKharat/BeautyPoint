@@ -96,7 +96,6 @@ export const AuthProvider = ({ children }) => {
       isLoading,
       isAuthenticated: !!token,
       register,
-      register,
       login,
       loginWithWhatsApp,
       logout,
