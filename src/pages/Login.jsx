@@ -5,7 +5,7 @@ import { Loader } from '../components/Loader.jsx';
 import '../css/auth-premium.css';
 
 export default function Login() {
-  const { loginWithWhatsApp, login } = useContext(AuthContext); // Added login
+  const { loginWithWhatsApp, login, loginWithGoogle } = useContext(AuthContext); // Added login & google
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -152,9 +152,44 @@ export default function Login() {
           ) : (
             // --- WHATSAPP USER LOGIN ---
             <>
+              {/* GOOGLE LOGIN BUTTON */}
+              <div style={{ marginBottom: '20px' }}>
+                <button
+                  onClick={() => loginWithGoogle()}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: '#fff',
+                    color: '#757575',
+                    border: '1px solid #ddd',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <img
+                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    alt="Google"
+                    style={{ width: '18px', marginRight: '10px' }}
+                  />
+                  Continue with Google
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#ccc' }}>
+                <div style={{ flex: 1, height: '1px', background: '#eee' }}></div>
+                <span style={{ padding: '0 10px', fontSize: '12px' }}>OR</span>
+                <div style={{ flex: 1, height: '1px', background: '#eee' }}></div>
+              </div>
+
               <div id="otpless-login-page" style={{ minHeight: '50px' }}>
                 <p style={{ fontSize: '14px', color: '#888', fontStyle: 'italic' }}>
-                  Please click the WhatsApp button on the screen to login.
+                  Or use WhatsApp (if available)
                 </p>
               </div>
 

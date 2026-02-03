@@ -65,6 +65,11 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'User not found' });
     }
 
+    // STRICT: Only allow Admins to login via Email/Password
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: 'Email login is restricted to Administrators. Please use WhatsApp login for customer accounts.' });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(400).json({ message: 'Invalid password' });
@@ -114,6 +119,41 @@ export const whatsappLogin = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'WhatsApp login failed', error: error.message });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { email, name, googleId } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required for Google Login' });
+    }
+
+    let user = await userDB.findByEmail(email);
+
+    if (!user) {
+      // Create new user
+      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await userDB.create({
+        name: name || 'Google User',
+        email: email,
+        phone: null, // Phone might be null for Google users
+        password: hashedPassword,
+        role: 'user'
+      });
+    }
+
+    const token = generateToken(user.id);
+    res.json({
+      message: 'Google login successful',
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Google login failed', error: error.message });
   }
 };
 

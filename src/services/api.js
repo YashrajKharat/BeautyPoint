@@ -27,6 +27,7 @@ export const userAPI = {
   register: (data) => api.post('/users/register', data),
   login: (data) => api.post('/users/login', data),
   whatsappLogin: (data) => api.post('/users/whatsapp-login', data),
+  googleLogin: (data) => api.post('/users/google-login', data),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
   getAllUsers: () => api.get('/users'),

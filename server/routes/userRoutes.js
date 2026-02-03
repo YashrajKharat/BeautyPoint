@@ -28,6 +28,7 @@ const router = express.Router();
 router.post('/register', validateRegister, handleValidationErrors, registerUser);
 router.post('/login', validateLogin, handleValidationErrors, loginUser);
 router.post('/whatsapp-login', whatsappLogin);
+router.post('/google-login', googleLogin);
 router.get('/check-admin-exists', checkAdminExists);
 router.get('/profile', authMiddleware, getUserProfile);
 router.put('/profile', authMiddleware, updateUserProfile);
