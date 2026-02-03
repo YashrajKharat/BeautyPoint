@@ -11,7 +11,8 @@ import {
   verifyPasswordResetOTP,
   resetPassword,
   makeAdmin,
-  checkAdminExists
+  checkAdminExists,
+  googleLogin
 } from '../controllers/userController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
