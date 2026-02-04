@@ -7,9 +7,7 @@ export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
 
-  const discountedPrice = product.discount
-    ? product.price * (1 - product.discount / 100)
-    : product.price;
+  // const discountedPrice = ... (Removed, backend handles this)
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
@@ -32,8 +30,8 @@ export default function ProductCard({ product }) {
       {/* Left - Image */}
       <div className="product-card-image-left">
         <img src={getImageUrl(product.image)} alt={product.name} />
-        {product.discount > 0 && (
-          <span className="discount-badge-left">{product.discount}% OFF</span>
+        {product.discount_percentage > 0 && (
+          <span className="discount-badge-left">{product.discount_percentage}% OFF</span>
         )}
       </div>
 
@@ -57,22 +55,32 @@ export default function ProductCard({ product }) {
         )}
 
         {/* Price */}
-        <div className="price-section-bottom">
-          <span className="price-current-bottom">₹{discountedPrice.toFixed(0)}</span>
-          {product.discount > 0 && (
-            <span className="price-original-bottom">₹{product.price.toFixed(0)}</span>
+        <div className="price-section-bottom" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+          <span className="price-current-bottom" style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            ₹{parseFloat(product.price).toFixed(0)}
+          </span>
+
+          {product.original_price > product.price && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '2px' }}>
+              <span className="price-original-bottom" style={{ textDecoration: 'line-through', color: '#999', fontSize: '14px' }}>
+                ₹{parseFloat(product.original_price).toFixed(0)}
+              </span>
+              <span style={{ fontSize: '12px', color: '#ff4b8b', fontWeight: 'bold' }}>
+                {product.discount_percentage}% OFF
+              </span>
+            </div>
           )}
         </div>
 
         {/* Buttons */}
         <div className="buttons-section">
-          <button 
+          <button
             className="btn-add-to-cart"
             onClick={handleAddToCart}
           >
             Add to Cart
           </button>
-          <button 
+          <button
             className="btn-buy-now"
             onClick={handleBuyNow}
           >

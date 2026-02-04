@@ -136,10 +136,27 @@ export const createProduct = async (req, res) => {
     }
 
     // Build product data
+    // Build product data
+    let finalPrice = parseFloat(price);
+    let originalPriceVal = null;
+    let discountVal = null;
+
+    // Handle Discount Logic
+    if (req.body.originalPrice) {
+      originalPriceVal = parseFloat(req.body.originalPrice);
+      if (req.body.discountPercentage) {
+        discountVal = parseFloat(req.body.discountPercentage);
+        // Auto-calculate selling price
+        finalPrice = originalPriceVal - (originalPriceVal * discountVal / 100);
+      }
+    }
+
     const productData = {
       name: String(name).trim(),
       category: String(category).trim(),
-      price: parseFloat(price),
+      price: finalPrice,
+      original_price: originalPriceVal,
+      discount_percentage: discountVal,
       stock: parseInt(stock) || 0,
       image: images[0], // Primary image for backward compatibility
       images: images,    // Array of all images
@@ -213,9 +230,29 @@ export const updateProduct = async (req, res) => {
     }
 
     // Convert numeric fields
+    // Convert numeric fields
     if (updateData.price) updateData.price = parseFloat(updateData.price);
     if (updateData.stock) updateData.stock = parseInt(updateData.stock);
     if (updateData.colors) updateData.colors = parseColors(updateData.colors);
+
+    // Handle Discount Logic for Updates
+    if (updateData.originalPrice || updateData.discountPercentage) {
+      updateData.original_price = parseFloat(updateData.originalPrice || req.body.original_price); // Fallback to existing if not sent? logic needs care
+      // Actually, cleaner to rely on what is sent. 
+      if (updateData.originalPrice) updateData.original_price = parseFloat(updateData.originalPrice);
+      if (updateData.discountPercentage) updateData.discount_percentage = parseFloat(updateData.discountPercentage);
+
+      // Recalculate price if both exist (or one exists and we assume the other is in DB? No, safer to recalc if sent)
+      // If frontend sends all 3 (price, original, discount), we trust frontend? 
+      // Or we recalc? The prompt said "stored", usually backend recalc is safer.
+      if (updateData.original_price && updateData.discount_percentage) {
+        updateData.price = updateData.original_price - (updateData.original_price * updateData.discount_percentage / 100);
+      }
+    }
+
+    // Remove camelCase keys if they are not columns (assuming columns snake_case)
+    delete updateData.originalPrice;
+    delete updateData.discountPercentage;
 
     // Clean up fields that shouldn't be in DB directly if they aren't columns
     delete updateData.existingImages;

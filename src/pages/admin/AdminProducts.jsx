@@ -12,6 +12,8 @@ export default function AdminProducts() {
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
+    discountPercentage: '',
     category: 'cosmetics',
     stock: '',
     image: null,
@@ -37,11 +39,24 @@ export default function AdminProducts() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+    // Auto-calculate logic
+    let newData = { ...formData, [name]: value };
+
+    if (name === 'originalPrice' || name === 'discountPercentage') {
+      const orig = parseFloat(name === 'originalPrice' ? value : formData.originalPrice);
+      const disc = parseFloat(name === 'discountPercentage' ? value : formData.discountPercentage);
+
+      if (!isNaN(orig) && !isNaN(disc)) {
+        const discounted = orig - (orig * disc / 100);
+        newData.price = discounted.toFixed(2);
+      }
+    }
+
+    setFormData(newData);
   };
+
+  // ... (keeping handleImageChange same)
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -83,6 +98,8 @@ export default function AdminProducts() {
       form.append('name', formData.name);
       form.append('description', formData.description);
       form.append('price', formData.price);
+      form.append('originalPrice', formData.originalPrice);
+      form.append('discountPercentage', formData.discountPercentage);
       form.append('category', formData.category);
       form.append('stock', formData.stock);
       if (formData.colors) {
@@ -120,6 +137,8 @@ export default function AdminProducts() {
         name: '',
         description: '',
         price: '',
+        originalPrice: '',
+        discountPercentage: '',
         category: 'cosmetics',
         stock: '',
         image: null,
@@ -137,6 +156,8 @@ export default function AdminProducts() {
       name: product.name,
       description: product.description,
       price: product.price,
+      originalPrice: product.original_price || '',
+      discountPercentage: product.discount_percentage || '',
       category: product.category,
       stock: product.stock,
       image: product.image,
@@ -174,6 +195,8 @@ export default function AdminProducts() {
       name: '',
       description: '',
       price: '',
+      originalPrice: '',
+      discountPercentage: '',
       category: 'cosmetics',
       stock: '',
       image: ''
@@ -214,14 +237,40 @@ export default function AdminProducts() {
               required
             ></textarea>
 
-            <input
-              type="number"
-              name="price"
-              placeholder="Price"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '12px' }}>Original Price (₹)</label>
+                <input
+                  type="number"
+                  name="originalPrice"
+                  placeholder="e.g. 1000"
+                  value={formData.originalPrice}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px' }}>Discount (%)</label>
+                <input
+                  type="number"
+                  name="discountPercentage"
+                  placeholder="e.g. 10"
+                  value={formData.discountPercentage}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Final Selling Price (₹)</label>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  required
+                  style={{ border: '2px solid #28a745' }}
+                />
+              </div>
+            </div>
 
             <select
               name="category"

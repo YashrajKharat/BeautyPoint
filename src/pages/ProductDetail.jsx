@@ -184,9 +184,9 @@ export default function ProductDetail() {
               className="product-image-main"
             />
 
-            {product.discount > 0 && (
+            {product.discount_percentage > 0 && (
               <div className="discount-badge">
-                <span className="discount-percent">{product.discount}%</span>
+                <span className="discount-percent">{product.discount_percentage}%</span>
                 <span className="discount-text">OFF</span>
               </div>
             )}
@@ -236,11 +236,16 @@ export default function ProductDetail() {
           {/* Price Section */}
           <div className="detail-pricing">
             <div className="price-display">
-              <span className="current-price">₹{discountedPrice.toFixed(2)}</span>
-              {product.discount > 0 && (
+              <span className="current-price">₹{parseFloat(product.price).toFixed(2)}</span>
+
+              {product.original_price > product.price && (
                 <>
-                  <span className="original-price">₹{product.price.toFixed(2)}</span>
-                  <span className="savings">Save ₹{savings.toFixed(2)}</span>
+                  <span className="original-price" style={{ textDecoration: 'line-through', color: '#888', marginLeft: '10px' }}>
+                    ₹{parseFloat(product.original_price).toFixed(2)}
+                  </span>
+                  <span className="savings" style={{ marginLeft: '10px', color: '#28a745' }}>
+                    Save ₹{(product.original_price - product.price).toFixed(2)} ({product.discount_percentage}%)
+                  </span>
                 </>
               )}
             </div>
