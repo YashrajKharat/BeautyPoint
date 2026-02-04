@@ -1598,7 +1598,7 @@ body {
   }
   
   .products-grid-ultra {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
   
   .brand-filter-ultra {

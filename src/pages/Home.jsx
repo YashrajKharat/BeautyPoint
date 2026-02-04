@@ -313,7 +313,7 @@ Message: ${contactFormData.message}
           ) : products.length > 0 ? (
             <>
               <div className="products-grid-ultra">
-                {products.slice(0, 4).map((product) => (
+                {products.slice(0, 5).map((product) => (
                   <div
                     key={product.id}
                     onClick={() => navigate(`/product/${product.id}`)}
