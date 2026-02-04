@@ -43,7 +43,11 @@ export default function Login() {
         <div className="auth-card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '40px 20px' }}>
 
           <div className="auth-header" style={{ marginBottom: '30px' }}>
-            <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>
+            <h1
+              style={{ fontSize: '2rem', marginBottom: '10px', cursor: 'default', userSelect: 'none' }}
+              onDoubleClick={() => { setIsAdminLogin(!isAdminLogin); setError(''); }}
+              title="Double tap to toggle Admin Mode"
+            >
               {isAdminLogin ? 'Admin Login' : 'Welcome to Beauty Point'}
             </h1>
             <p style={{ color: '#666' }}>
@@ -134,18 +138,6 @@ export default function Login() {
                     style={{ width: '18px', marginRight: '10px' }}
                   />
                   Continue with Google
-                </button>
-              </div>
-
-              <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-                <p style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
-                  Are you an Administrator?
-                </p>
-                <button
-                  onClick={() => { setIsAdminLogin(true); setError(''); }}
-                  style={{ fontSize: '12px', color: '#333', background: 'none', border: '1px solid #ddd', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Admin Login (Email)
                 </button>
               </div>
             </>
