@@ -5,7 +5,7 @@ import { Loader } from '../components/Loader.jsx';
 import '../css/auth-premium.css';
 
 export default function Login() {
-  const { loginWithWhatsApp, login, loginWithGoogle } = useContext(AuthContext); // Added login & google
+  const { login, loginWithGoogle } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,49 +14,6 @@ export default function Login() {
   const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  // Handle WhatsApp Login (OTPLess)
-  useEffect(() => {
-    // Only verify OTPLess if NOT in Admin mode
-    if (isAdminLogin) return;
-
-    window.otpless = async (otplessUser) => {
-      console.log('OTPLess User Data:', otplessUser);
-
-      if (!otplessUser) {
-        setError('Authentication failed. Please try again.');
-        return;
-      }
-
-      const phone = otplessUser.waNumber ||
-        otplessUser?.identities?.[0]?.identityValue ||
-        otplessUser?.mobile?.number;
-
-      const name = otplessUser.waName ||
-        otplessUser?.identities?.[0]?.name ||
-        otplessUser?.mobile?.name ||
-        'WhatsApp User';
-
-      if (!phone) {
-        setError('Could not get phone number from WhatsApp. Please try again.');
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const result = await loginWithWhatsApp(phone, name);
-        if (result.user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/');
-        }
-      } catch (err) {
-        console.error('Login error:', err);
-        setError('Login failed. Server response: ' + (err.message || err));
-        setIsLoading(false);
-      }
-    };
-  }, [loginWithWhatsApp, navigate, isAdminLogin]);
 
   // Handle Admin Email Login
   const handleAdminLogin = async (e) => {
@@ -69,7 +26,6 @@ export default function Login() {
       if (result.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
-        // Fallback if a regular user tries to login via email (optional)
         navigate('/');
       }
     } catch (err) {
@@ -88,10 +44,10 @@ export default function Login() {
 
           <div className="auth-header" style={{ marginBottom: '30px' }}>
             <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>
-              {isAdminLogin ? 'Admin Login' : 'Welcome Back'}
+              {isAdminLogin ? 'Admin Login' : 'Welcome to Beauty Point'}
             </h1>
             <p style={{ color: '#666' }}>
-              {isAdminLogin ? 'Sign in to manage your store' : 'Login instantly with WhatsApp'}
+              {isAdminLogin ? 'Sign in to manage your store' : 'Sign in to access your account'}
             </p>
           </div>
 
@@ -145,12 +101,12 @@ export default function Login() {
                   onClick={() => { setIsAdminLogin(false); setError(''); }}
                   style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
                 >
-                  &larr; Back to WhatsApp Login
+                  &larr; Back to User Login
                 </button>
               </div>
             </form>
           ) : (
-            // --- WHATSAPP USER LOGIN ---
+            // --- GOOGLE USER LOGIN ---
             <>
               {/* GOOGLE LOGIN BUTTON */}
               <div style={{ marginBottom: '20px' }}>
@@ -181,48 +137,9 @@ export default function Login() {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#ccc' }}>
-                <div style={{ flex: 1, height: '1px', background: '#eee' }}></div>
-                <span style={{ padding: '0 10px', fontSize: '12px' }}>OR</span>
-                <div style={{ flex: 1, height: '1px', background: '#eee' }}></div>
-              </div>
-
-              <div id="otpless-login-page" style={{ minHeight: '50px' }}>
-                <p style={{ fontSize: '14px', color: '#888', fontStyle: 'italic' }}>
-                  Or use WhatsApp (if available)
-                </p>
-              </div>
-
-              {/* DEMO BUTTON */}
-              <div style={{ marginTop: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '8px' }}>
-                <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
-                  ⚠️ Dashboard down? Use this to test:
-                </p>
-                <button
-                  onClick={() => {
-                    console.log('Simulating login...');
-                    window.otpless({
-                      waNumber: '919876543210',
-                      waName: 'Test User'
-                    });
-                  }}
-                  style={{
-                    background: '#25D366',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Simulate WhatsApp Login
-                </button>
-              </div>
-
               <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
                 <p style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
-                  Secure Passwordless Authentication
+                  Are you an Administrator?
                 </p>
                 <button
                   onClick={() => { setIsAdminLogin(true); setError(''); }}
