@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Loader } from '../components/Loader.jsx';
@@ -10,10 +10,29 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Secret Long Press Timer
+  const timerRef = useRef(null);
+
   // Admin Login State
   const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const startPress = () => {
+    timerRef.current = setTimeout(() => {
+      setIsAdminLogin(prev => !prev);
+      setError('');
+      // Vibrate if on mobile to give feedback
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 2000); // 2 seconds hold
+  };
+
+  const endPress = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
 
   // Handle Admin Email Login
   const handleAdminLogin = async (e) => {
@@ -44,9 +63,13 @@ export default function Login() {
 
           <div className="auth-header" style={{ marginBottom: '30px' }}>
             <h1
-              style={{ fontSize: '2rem', marginBottom: '10px', cursor: 'default', userSelect: 'none' }}
-              onDoubleClick={() => { setIsAdminLogin(!isAdminLogin); setError(''); }}
-              title="Double tap to toggle Admin Mode"
+              style={{ fontSize: '2rem', marginBottom: '10px', cursor: 'pointer', userSelect: 'none' }}
+              onMouseDown={startPress}
+              onTouchStart={startPress}
+              onMouseUp={endPress}
+              onMouseLeave={endPress}
+              onTouchEnd={endPress}
+              title="Hold for 2 seconds to toggle Admin Mode"
             >
               {isAdminLogin ? 'Admin Login' : 'Welcome to Beauty Point'}
             </h1>
