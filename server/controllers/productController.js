@@ -147,7 +147,7 @@ export const createProduct = async (req, res) => {
       if (req.body.discountPercentage) {
         discountVal = parseFloat(req.body.discountPercentage);
         // Auto-calculate selling price
-        finalPrice = originalPriceVal - (originalPriceVal * discountVal / 100);
+        finalPrice = Math.round(originalPriceVal - (originalPriceVal * discountVal / 100));
       }
     }
 
@@ -246,7 +246,7 @@ export const updateProduct = async (req, res) => {
       // If frontend sends all 3 (price, original, discount), we trust frontend? 
       // Or we recalc? The prompt said "stored", usually backend recalc is safer.
       if (updateData.original_price && updateData.discount_percentage) {
-        updateData.price = updateData.original_price - (updateData.original_price * updateData.discount_percentage / 100);
+        updateData.price = Math.round(updateData.original_price - (updateData.original_price * updateData.discount_percentage / 100));
       }
     }
 

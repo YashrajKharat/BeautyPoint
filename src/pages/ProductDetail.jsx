@@ -243,8 +243,8 @@ export default function ProductDetail() {
                   <span className="original-price" style={{ textDecoration: 'line-through', color: '#888', marginLeft: '10px' }}>
                     ₹{parseFloat(product.original_price).toFixed(2)}
                   </span>
-                  <span className="savings" style={{ marginLeft: '10px', color: '#28a745' }}>
-                    Save ₹{(product.original_price - product.price).toFixed(2)} ({product.discount_percentage}%)
+                  <span className="savings" style={{ marginLeft: '10px', color: '#155724', fontWeight: 'bold' }}>
+                    Save ₹{Math.round(product.original_price - product.price)} ({product.discount_percentage}%)
                   </span>
                 </>
               )}

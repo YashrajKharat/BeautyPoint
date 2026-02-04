@@ -49,7 +49,7 @@ export default function AdminProducts() {
 
       if (!isNaN(orig) && !isNaN(disc)) {
         const discounted = orig - (orig * disc / 100);
-        newData.price = discounted.toFixed(2);
+        newData.price = Math.round(discounted);
       }
     }
 
