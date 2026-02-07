@@ -140,13 +140,14 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = useCallback(async (data) => {
     try {
-      const response = await userAPI.updateProfile(data);
-      setUser(response.data.user);
-      return response.data;
+      await userAPI.updateProfile(data);
+      // Fetch fresh profile to ensure sync
+      const userData = await getProfile();
+      return { user: userData };
     } catch (error) {
       throw error.response?.data?.message || 'Failed to update profile';
     }
-  }, []);
+  }, [getProfile]);
 
   return (
     <AuthContext.Provider value={{
