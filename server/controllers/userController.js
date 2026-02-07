@@ -48,7 +48,14 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       message: role === 'admin' ? 'Admin registered successfully' : 'User registered successfully',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        role: user.role
+      }
     });
   } catch (error) {
     res.status(500).json({ message: 'Registration failed', error: error.message });
@@ -79,7 +86,14 @@ export const loginUser = async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        role: user.role
+      }
     });
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message });

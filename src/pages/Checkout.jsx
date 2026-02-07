@@ -21,13 +21,56 @@ export default function Checkout() {
   const [couponError, setCouponError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
   const hasInitialized = useRef(false);
+
+  // Checking state for phone verification
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(true);
+
   const [formData, setFormData] = useState({
-    street: user?.address?.street || '',
-    city: user?.address?.city || '',
-    state: user?.address?.state || '',
-    zipCode: user?.address?.zipCode || '',
-    country: user?.address?.country || ''
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: ''
   });
+
+  // Effect to sync user address to form data
+  useEffect(() => {
+    if (user?.address) {
+      setFormData(prev => ({
+        ...prev,
+        street: user.address.street || '',
+        city: user.address.city || '',
+        state: user.address.state || '',
+        zipCode: user.address.zipCode || '',
+        country: user.address.country || ''
+      }));
+    }
+  }, [user]);
+
+  // PHONE VERIFICATION & SELF-HEALING
+  useEffect(() => {
+    const verifyPhone = async () => {
+      if (!isAuthenticated) return;
+
+      // If user exists but phone is missing, try to fetch fresh profile ONCE
+      if (user && !user.phone) {
+        console.log('User loaded but phone missing. Attempting to fetch fresh profile...');
+        setIsVerifyingPhone(true);
+        try {
+          await getProfile(); // This updates the context
+        } catch (err) {
+          console.error('Failed to verify phone:', err);
+        } finally {
+          setIsVerifyingPhone(false);
+        }
+      } else {
+        // Phone exists or user not loaded yet
+        setIsVerifyingPhone(false);
+      }
+    };
+
+    verifyPhone();
+  }, [isAuthenticated, user?.phone]); // Depend specifically on user.phone
 
   // Validation rules for checkout form
   const validateCheckoutForm = () => {
@@ -115,18 +158,6 @@ export default function Checkout() {
   const handleInputChange = (e) => {
     handleFormDataChange(e.target.name, e.target.value);
   };
-
-  // Debug: Log whenever cart updates
-  useEffect(() => {
-    console.log('Cart updated in checkout:', {
-      cartLength: cart?.length,
-      cartItems: cart?.map(item => ({
-        name: item.products?.name || item.name,
-        price: item.products?.price || item.price,
-        qty: item.quantity
-      }))
-    });
-  }, [cart]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -243,30 +274,8 @@ export default function Checkout() {
     const qty = item.quantity || 1;
     const itemTotal = itemPrice * qty;
 
-    console.log('Cart item calculation:', {
-      productName: product?.name || 'Unknown',
-      price: itemPrice,
-      qty,
-      itemTotal,
-      hasProducts: !!item.products,
-      hasProduct: !!item.product,
-      hasProductId: !!item.productId
-    });
-
     return total + itemTotal;
   }, 0) : 0;
-
-  console.log('=== CHECKOUT DEBUG ===');
-  console.log('Full cart array:', cart);
-  console.log('Checkout Summary:', {
-    isCheckoutProduct: !!checkoutProduct,
-    cartLength: cart?.length,
-    cartSubtotal,
-    checkoutProduct: checkoutProduct?.name,
-    hasCartItems: (cart?.length || 0) > 0
-  });
-  console.log('checkoutProduct value:', checkoutProduct);
-  console.log('=== END DEBUG ===');
 
   const checkoutSubtotal = checkoutProduct ? (checkoutProduct.price * checkoutProductQuantity) : cartSubtotal;
 
@@ -278,16 +287,15 @@ export default function Checkout() {
   const subtotalAfterDiscount = checkoutSubtotal - discountAmount;
   const orderTotal = subtotalAfterDiscount + calculateShippingCost();
 
-  // PHONE VALIDATION CHECK
-  useEffect(() => {
-    // Wait for user load
-    if (!isAuthenticated) return;
-
-    // If user is loaded but no phone
-    if (user && !user.phone) {
-      console.log('User missing phone number, blocking checkout');
-    }
-  }, [user, isAuthenticated]);
+  // BLOCKING LOGIC
+  if (isVerifyingPhone) {
+    return (
+      <div className="premium-checkout-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader visible={true} size="md" />
+        <p style={{ marginTop: '20px', marginLeft: '10px' }}>Verifying account details...</p>
+      </div>
+    );
+  }
 
   if (isAuthenticated && user && !user.phone) {
     return (
@@ -305,45 +313,42 @@ export default function Checkout() {
           <p style={{ color: '#666', marginBottom: '2rem', lineHeight: '1.6' }}>
             We need your phone number to coordinate delivery and send order updates. Please update your profile to continue.
           </p>
+
+          <button
+            onClick={() => navigate('/profile', { state: { requirePhone: true } })}
+            style={{
+              padding: '1rem 2rem',
+              background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+              marginBottom: '1rem'
+            }}
+          >
+            Update Profile Now
+          </button>
+
           <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', textAlign: 'left', background: '#f5f5f5', padding: '15px', borderRadius: '8px', maxWidth: '100%', overflowX: 'auto' }}>
             <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Diagnosis:</p>
             <p>User ID: {user?.id}</p>
             <p>Phone Value: "{user?.phone}" ({user?.phone ? 'Present' : 'Missing'})</p>
-            <details>
-              <summary style={{ cursor: 'pointer', color: '#007bff' }}>Show Full User Data</summary>
-              <pre style={{ marginTop: '10px', fontSize: '10px' }}>{JSON.stringify(user, null, 2)}</pre>
-            </details>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '1rem' }}>
-            <button
-              onClick={() => navigate('/profile', { state: { requirePhone: true } })}
-              style={{
-                padding: '1rem 2rem',
-                background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
-              }}
-            >
-              Update Profile Now
-            </button>
             <button
               onClick={() => getProfile()}
               style={{
-                padding: '1rem',
-                background: '#f0f0f0',
-                color: '#333',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
+                marginTop: '10px',
+                padding: '0.5rem 1rem',
+                background: '#333',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
                 cursor: 'pointer'
               }}
             >
-              🔄 Check Again
+              🔄 Force Refresh Data
             </button>
           </div>
         </div>
