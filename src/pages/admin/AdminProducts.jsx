@@ -27,7 +27,7 @@ export default function AdminProducts() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await productAPI.getAll();
+      const response = await productAPI.getAllProducts({ limit: 1000 });
       setProducts(response.data?.products || response.data || []);
     } catch (error) {
       alert('Failed to fetch products: ' + error.message);
@@ -203,6 +203,19 @@ export default function AdminProducts() {
     });
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   return (
     <div className="admin-products">
       <div className="products-header">
@@ -217,9 +230,12 @@ export default function AdminProducts() {
 
       {showForm && (
         <div className="product-form-container">
+          {/* ... existing form code ... (I will rely on the diff to keep this intact if I don't touch it, but wait, I can't touch the return structure easily without replacing the whole return if I want to wrap things or inject variables calculated inside render) */}
+          {/* Actually I can just replace the table mapping and append the pagination controls */}
           <form onSubmit={handleSubmit} className="product-form">
+            {/* Re-including form content for context if needed, but better to target specific lines */}
             <h2>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-
+            {/* ... inputs ... */}
             <input
               type="text"
               name="name"
@@ -344,45 +360,82 @@ export default function AdminProducts() {
       {isLoading ? (
         <div className="loading">Loading products...</div>
       ) : (
-        <div className="products-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(product => (
-                <tr key={product.id}>
-                  <td>{product.name}</td>
-                  <td>{product.category}</td>
-                  <td>₹{product.price}</td>
-                  <td>{product.stock}</td>
-                  <td>{product.description?.substring(0, 30)}...</td>
-                  <td className="actions">
-                    <button
-                      className="btn-edit"
-                      onClick={() => handleEdit(product)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn-delete"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          <div className="products-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Description</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {currentProducts.map(product => (
+                  <tr key={product.id}>
+                    <td>{product.name}</td>
+                    <td>{product.category}</td>
+                    <td>₹{product.price}</td>
+                    <td>{product.stock}</td>
+                    <td>{product.description?.substring(0, 30)}...</td>
+                    <td className="actions">
+                      <button
+                        className="btn-edit"
+                        onClick={() => handleEdit(product)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {products.length > itemsPerPage && (
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  background: currentPage === 1 ? '#f0f0f0' : 'white',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Previous
+              </button>
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  background: currentPage === totalPages ? '#f0f0f0' : 'white',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -28,7 +28,7 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true);
       const [products, users, orders] = await Promise.all([
-        productAPI.getAll(),
+        productAPI.getAllProducts({ limit: 1000 }),
         userAPI.getAllUsers(),
         orderAPI.getAllOrders()
       ]);
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
       const productsArray = products.data?.products || products.data || [];
       const usersArray = Array.isArray(users.data) ? users.data : [];
       const ordersArray = Array.isArray(orders.data) ? orders.data : [];
-      
+
       // Calculate total revenue only for delivered orders
       const totalRevenue = ordersArray.reduce((sum, order) => {
         const orderStatus = (order.status || order.orderStatus || '').toLowerCase();
