@@ -9,7 +9,7 @@ import '../css/checkout-coupon.css';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useContext(AuthContext);
+  const { user, isAuthenticated, getProfile } = useContext(AuthContext);
   const { cart, fetchCart, clearCart } = useContext(CartContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isCartLoading, setIsCartLoading] = useState(false);
@@ -305,22 +305,47 @@ export default function Checkout() {
           <p style={{ color: '#666', marginBottom: '2rem', lineHeight: '1.6' }}>
             We need your phone number to coordinate delivery and send order updates. Please update your profile to continue.
           </p>
-          <button
-            onClick={() => navigate('/profile', { state: { requirePhone: true } })}
-            style={{
-              padding: '1rem 2rem',
-              background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
-            }}
-          >
-            Update Profile Now
-          </button>
+          <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', textAlign: 'left', background: '#f5f5f5', padding: '15px', borderRadius: '8px', maxWidth: '100%', overflowX: 'auto' }}>
+            <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Diagnosis:</p>
+            <p>User ID: {user?.id}</p>
+            <p>Phone Value: "{user?.phone}" ({user?.phone ? 'Present' : 'Missing'})</p>
+            <details>
+              <summary style={{ cursor: 'pointer', color: '#007bff' }}>Show Full User Data</summary>
+              <pre style={{ marginTop: '10px', fontSize: '10px' }}>{JSON.stringify(user, null, 2)}</pre>
+            </details>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '1rem' }}>
+            <button
+              onClick={() => navigate('/profile', { state: { requirePhone: true } })}
+              style={{
+                padding: '1rem 2rem',
+                background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+              }}
+            >
+              Update Profile Now
+            </button>
+            <button
+              onClick={() => getProfile()}
+              style={{
+                padding: '1rem',
+                background: '#f0f0f0',
+                color: '#333',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              🔄 Check Again
+            </button>
+          </div>
         </div>
       </div>
     );
