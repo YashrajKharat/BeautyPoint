@@ -278,6 +278,54 @@ export default function Checkout() {
   const subtotalAfterDiscount = checkoutSubtotal - discountAmount;
   const orderTotal = subtotalAfterDiscount + calculateShippingCost();
 
+  // PHONE VALIDATION CHECK
+  useEffect(() => {
+    // Wait for user load
+    if (!isAuthenticated) return;
+
+    // If user is loaded but no phone
+    if (user && !user.phone) {
+      console.log('User missing phone number, blocking checkout');
+    }
+  }, [user, isAuthenticated]);
+
+  if (isAuthenticated && user && !user.phone) {
+    return (
+      <div className="premium-checkout-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          background: 'white',
+          padding: '3rem',
+          borderRadius: '16px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
+          textAlign: 'center',
+          maxWidth: '500px'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📱</div>
+          <h2 style={{ fontSize: '1.8rem', color: '#3d2c2c', marginBottom: '1rem' }}>Phone Number Required</h2>
+          <p style={{ color: '#666', marginBottom: '2rem', lineHeight: '1.6' }}>
+            We need your phone number to coordinate delivery and send order updates. Please update your profile to continue.
+          </p>
+          <button
+            onClick={() => navigate('/profile', { state: { requirePhone: true } })}
+            style={{
+              padding: '1rem 2rem',
+              background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+            }}
+          >
+            Update Profile Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="premium-checkout-container">
       <Loader visible={isLoading} size="md" />

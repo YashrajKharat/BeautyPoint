@@ -116,6 +116,16 @@ export default function Navbar() {
                   <div className="user-dropdown">
                     <button
                       className="dropdown-item"
+                      onClick={() => {
+                        navigate('/profile');
+                        setIsMenuOpen(false);
+                        setShowUserMenu(false);
+                      }}
+                    >
+                      <span className="dropdown-icon">👤</span> Profile
+                    </button>
+                    <button
+                      className="dropdown-item"
                       onClick={handleLogout}
                     >
                       <span className="dropdown-icon">🚪</span> Logout

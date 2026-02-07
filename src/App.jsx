@@ -23,6 +23,7 @@ import AdminUsers from './pages/admin/AdminUsers.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminCoupon from './pages/admin/AdminCoupon.jsx';
 import Footer from './components/Footer.jsx';
+import Profile from './pages/Profile.jsx';
 import './css/modern-globals.css';
 import './App.css';
 
@@ -43,7 +44,9 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
             <Route path="/track" element={<TrackOrder />} />
+            <Route path="/profile" element={<Profile />} />
 
 
             {/* Admin Routes */}
