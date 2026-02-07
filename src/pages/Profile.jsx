@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import '../css/profile.css'; // We'll create this next
 
 export default function Profile() {
-    const { user, login } = useContext(AuthContext); // login is needed to update context
+    const { user, login, updateProfile } = useContext(AuthContext); // Destructure updateProfile
     const navigate = useNavigate();
     const location = useLocation();
     const [loading, setLoading] = useState(true);
@@ -87,10 +87,8 @@ export default function Profile() {
         }
 
         try {
-            const { data } = await userAPI.updateProfile(formData);
-            // Update local storage/context if needed, although context usually updates on refresh or manual call
-            // Ideally AuthContext should expose a way to update local user state without full login
-            // but for now, the backend is updated.
+            // Use context function to ensure global state is updated
+            await updateProfile(formData);
 
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
 
