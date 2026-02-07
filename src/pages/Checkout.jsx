@@ -332,25 +332,7 @@ export default function Checkout() {
             Update Profile Now
           </button>
 
-          <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', textAlign: 'left', background: '#f5f5f5', padding: '15px', borderRadius: '8px', maxWidth: '100%', overflowX: 'auto' }}>
-            <p style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Diagnosis:</p>
-            <p>User ID: {user?.id}</p>
-            <p>Phone Value: "{user?.phone}" ({user?.phone ? 'Present' : 'Missing'})</p>
-            <button
-              onClick={() => getProfile()}
-              style={{
-                marginTop: '10px',
-                padding: '0.5rem 1rem',
-                background: '#333',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              🔄 Force Refresh Data
-            </button>
-          </div>
+
         </div>
       </div>
     );
