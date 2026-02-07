@@ -75,8 +75,8 @@ app.use(cors({
 
 // ✅ SECURITY: Rate limiting (relaxed for development)
 const limiter = rateLimit({
-  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 60 * 1000, // 15 min prod, 1 hour dev
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 100 prod, 1000 dev
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3000, // Relaxed limit: 3000 requests per 15 mins
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
