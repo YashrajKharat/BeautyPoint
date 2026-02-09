@@ -11,7 +11,36 @@ export default function AdminOrders() {
   useEffect(() => {
     fetchOrders();
   }, []);
-  // ... (skipping unchanged lines)
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const response = await orderAPI.getAllOrders();
+      const ordersData = Array.isArray(response.data) ? response.data : [];
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      alert('Failed to fetch orders: ' + error.message);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      setUpdatingId(orderId);
+      // Send status field to backend
+      await orderAPI.updateOrderStatus(orderId, { status: newStatus });
+      alert('Order status updated successfully!');
+      fetchOrders();
+    } catch (error) {
+      alert('Failed to update order status: ' + error.message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const statuses = ['pending', 'confirmed', 'shipped', 'out-for-delivery', 'delivered', 'cancelled', 'return-requested', 'returned'];
   return (
     <div className="admin-orders">
       <div className="orders-header">
