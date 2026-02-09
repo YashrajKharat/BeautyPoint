@@ -7,7 +7,8 @@ import {
   updateOrderStatus,
   cancelOrder,
   getAllOrders,
-  requestReturn
+  requestReturn,
+  deleteOrder
 } from '../controllers/orderController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
@@ -25,5 +26,6 @@ router.put('/:orderId/return', authMiddleware, requestReturn);
 // Admin only routes
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllOrders);
 router.put('/:orderId/status', authMiddleware, adminMiddleware, updateOrderStatus);
+router.delete('/:orderId', authMiddleware, adminMiddleware, deleteOrder);
 
 export default router;

@@ -350,3 +350,22 @@ export const requestReturn = async (req, res) => {
     res.status(500).json({ message: 'Error requesting return', error: error.message });
   }
 };
+
+export const deleteOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await orderDB.getById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Only allow admin (checked by middleware) or user who owns it (though this is an admin feature)
+    // adminMiddleware should be used on the route.
+
+    await orderDB.delete(orderId);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting order', error: error.message });
+  }
+};

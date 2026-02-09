@@ -40,6 +40,20 @@ export default function AdminOrders() {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      try {
+        await orderAPI.deleteOrder(orderId);
+        // Optimistic update or refetch
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        alert('Order deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        alert('Failed to delete order: ' + error.message);
+      }
+    }
+  };
+
   const statuses = ['pending', 'confirmed', 'shipped', 'out-for-delivery', 'delivered', 'cancelled', 'return-requested', 'returned'];
   return (
     <div className="admin-orders">
@@ -109,16 +123,29 @@ export default function AdminOrders() {
                       </td>
                       <td>{addressStr.substring(0, 20)}...</td>
                       <td className="actions" onClick={(e) => e.stopPropagation()}>
-                        <select
-                          value={status}
-                          onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                          disabled={updatingId === order.id || isCancelled}
-                          className="status-select"
-                        >
-                          {statuses.map(st => (
-                            <option key={st} value={st}>{st}</option>
-                          ))}
-                        </select>
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                          <select
+                            value={status}
+                            onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                            disabled={updatingId === order.id || isCancelled}
+                            className="status-select"
+                          >
+                            {statuses.map(st => (
+                              <option key={st} value={st}>{st}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteOrder(order.id);
+                            }}
+                            className="btn-delete"
+                            title="Delete Order"
+                            style={{ padding: '5px 10px' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
