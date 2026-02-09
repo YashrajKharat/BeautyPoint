@@ -276,8 +276,16 @@ export const orderDB = {
   },
 
   async delete(id) {
-    // First delete order items (though cascade might handle this, it's safer to be explicit or rely on FK constraints)
-    // Assuming Supabase FKs are set to cascade delete, we just delete the order.
+    // Manually delete order items first to avoid Foreign Key constraint errors
+    // (In case Cascade Delete is not enabled on the DB)
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', id);
+
+    if (itemsError) throw itemsError;
+
+    // Now delete the order
     const { error } = await supabase
       .from('orders')
       .delete()
