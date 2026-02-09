@@ -257,7 +257,7 @@ export const orderDB = {
   async getAll() {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, products(*)), users(email)');
+      .select('*, order_items(*, products(*)), users(email, phone, name)');
 
     if (error) throw error;
     return data;
