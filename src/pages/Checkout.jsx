@@ -304,10 +304,35 @@ export default function Checkout() {
           background: 'white',
           padding: '3rem',
           borderRadius: '16px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
+          textAlign: 'center',
+          maxWidth: '500px'
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📱</div>
+          <h2 style={{ fontSize: '1.8rem', color: '#3d2c2c', marginBottom: '1rem' }}>Phone Number Required</h2>
+          <p style={{ color: '#666', marginBottom: '2rem', lineHeight: '1.6' }}>
+            We need your phone number to coordinate delivery and send order updates. Please update your profile to continue.
+          </p>
 
-
+          <button
+            onClick={() => navigate('/profile', { state: { requirePhone: true } })}
+            style={{
+              padding: '1rem 2rem',
+              background: 'linear-gradient(135deg, #F6C1CC 0%, #D4AF37 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+              marginBottom: '1rem'
+            }}
+          >
+            Update Profile Now
+          </button>
         </div>
-      </div >
+      </div>
     );
   }
 
