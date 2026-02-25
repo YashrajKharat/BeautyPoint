@@ -1,6 +1,18 @@
 {
     "rewrites": [
         {
+            "source": "/auth/:path*",
+            "destination": "https://beautypoint.onrender.com/auth/:path*"
+        },
+        {
+            "source": "/rest/:path*",
+            "destination": "https://beautypoint.onrender.com/rest/:path*"
+        },
+        {
+            "source": "/storage/:path*",
+            "destination": "https://beautypoint.onrender.com/storage/:path*"
+        },
+        {
             "source": "/supabase-proxy/:path*",
             "destination": "https://beautypoint.onrender.com/:path*"
         },
