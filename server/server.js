@@ -55,18 +55,22 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     return req.baseUrl === '/supabase-proxy' ? req.url : req.originalUrl;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // 1. DETECT TRUE HOST (Respect Vercel Forwarding)
-    const trueHost = srcReq.headers['x-forwarded-host'] || srcReq.headers.host || 'beautypoint.onrender.com';
+    // 1. DETECT TRUE HOST (Splitting to handle comma-separated lists from Vercel/Render)
+    const rawForwardedHost = srcReq.headers['x-forwarded-host'] || '';
+    const firstHost = rawForwardedHost.split(',')[0].trim();
+    const trueHost = firstHost || srcReq.headers.host || 'beautypoint.onrender.com';
+
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-    // ✅ DEEP LOGGING: Reveal the hidden host for mismatch debugging
+    // ✅ DEEP LOGGING: Reveal the exact host Supabase will use
     if (srcReq.originalUrl.includes('/auth/v1/')) {
-      console.log(`📡 [AUTH REQ] Host: ${trueHost} | Path: ${srcReq.originalUrl}`);
+      console.log(`📡 [AUTH REQ] Extracted Host: ${trueHost} | Raw X-F-H: ${rawForwardedHost}`);
     }
 
-    // ✅ CRITICAL: Supabase builds redirect_uri using x-forwarded-host
+    // ✅ CRITICAL: Supabase builds redirect_uri using these headers
     proxyReqOpts.headers['x-forwarded-host'] = trueHost;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
+    proxyReqOpts.headers['x-forwarded-port'] = '443';
     proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
 
     // Host Spoofing for Supabase routing
@@ -82,7 +86,8 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     headers['access-control-allow-methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
     headers['access-control-allow-headers'] = 'Content-Type, Authorization, x-client-info, apikey';
 
-    const trueHost = userReq.headers['x-forwarded-host'] || userReq.headers.host || 'beautypoint.onrender.com';
+    const rawForwardedHost = userReq.headers['x-forwarded-host'] || '';
+    const trueHost = rawForwardedHost.split(',')[0].trim() || userReq.headers.host || 'beautypoint.onrender.com';
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
     const prefix = userReq.baseUrl === '/supabase-proxy' ? '/supabase-proxy' : '';
 
@@ -95,7 +100,7 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
           .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${trueHost}${prefix}`))
           .replace(/([^:])\/\//g, '$1/');
 
-        console.log(`🔄 [REDIRECT] Patched: ${headers['location'].split('?')[0]}`);
+        console.log(`🔄 [REDIRECT] Patched to: ${headers['location'].split('?')[0]}`);
       }
     }
 
@@ -118,7 +123,8 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
       try {
         const bodyStr = proxyResData.toString('utf8');
         const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
-        const trueHost = userReq.headers['x-forwarded-host'] || userReq.headers.host || 'beautypoint.onrender.com';
+        const rawForwardedHost = userReq.headers['x-forwarded-host'] || '';
+        const trueHost = rawForwardedHost.split(',')[0].trim() || userReq.headers.host || 'beautypoint.onrender.com';
         const prefix = userReq.baseUrl === '/supabase-proxy' ? '/supabase-proxy' : '';
 
         if (bodyStr.includes(supabaseHost)) {
