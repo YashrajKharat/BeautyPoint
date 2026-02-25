@@ -137,20 +137,24 @@ app.use('/supabase-proxy', (req, res, next) => {
     headers['access-control-allow-origin'] = '*';
 
     // 2. ✅ OAUTH FIX: Rewrite Location header for Google/GitHub/etc
-    // If Supabase sends a redirect to Google, we MUST rewrite the redirect_uri
-    // to point back to our proxy instead of directly to supabase.co
     if (headers['location']) {
-      let loc = headers['location'];
-      if (loc.includes('redirect_uri=') && loc.includes(cleanSupabaseUrl)) {
-        console.log('🔄 Rewriting OAuth redirect_uri to use the Proxy tunnel...');
-        const proxyCallback = 'https://beautypoint.onrender.com/supabase-proxy/auth/v1/callback';
-        headers['location'] = loc.replace(
-          encodeURIComponent(`${cleanSupabaseUrl}/auth/v1/callback`),
-          encodeURIComponent(proxyCallback)
-        ).replace(
-          `${cleanSupabaseUrl}/auth/v1/callback`,
-          proxyCallback
-        );
+      const loc = headers['location'];
+      const proxyHost = 'beautypoint.onrender.com';
+      const proxyCallback = `https://${proxyHost}/supabase-proxy/auth/v1/callback`;
+      const supabaseCallback = `${cleanSupabaseUrl}/auth/v1/callback`;
+
+      // Check for both literal and encoded versions
+      const encodedSupabase = encodeURIComponent(supabaseCallback);
+      const encodedProxy = encodeURIComponent(proxyCallback);
+
+      if (loc.includes(encodedSupabase) || loc.includes(supabaseCallback)) {
+        console.log(`� [PROXY DEBUG] Found OAuth redirect. Original: ${loc.substring(0, 100)}...`);
+
+        headers['location'] = loc
+          .split(encodedSupabase).join(encodedProxy)
+          .split(supabaseCallback).join(proxyCallback);
+
+        console.log(`✅ [PROXY DEBUG] Rewritten Location to use: ${proxyHost}`);
       }
     }
     return headers;
