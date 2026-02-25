@@ -36,6 +36,10 @@ import { verifySMSConfig } from './utils/smsService.js';
 
 const app = express();
 
+// ✅ SUPABASE PROXY CONFIGURATION
+const rawUrl = process.env.SUPABASE_URL || '';
+const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
 // ✅ SUPABASE PROXY (ISP Bypass & Auth Handshake)
 // Handles both /supabase-proxy (API) and /auth (Clean Handshake for Google)
 app.use(['/supabase-proxy', '/auth'], (req, res, next) => {
