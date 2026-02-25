@@ -138,27 +138,28 @@ app.use('/supabase-proxy', (req, res, next) => {
     // 1. Ensure CORS headers are present for the frontend
     headers['access-control-allow-origin'] = '*';
 
-    // 2. ✅ OAUTH FIX: Aggressively rewrite Location header
+    // 2. ✅ OAUTH FIX: Ultra-Aggressive Rewrite
     if (headers['location']) {
-      const loc = headers['location'];
+      let loc = Array.isArray(headers['location']) ? headers['location'][0] : headers['location'];
       const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
-      const proxyCallback = `https://${currentHost}/supabase-proxy/auth/v1/callback`;
+      const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-      const supabaseHost = cleanSupabaseUrl.replace('https://', '');
-      const supabaseCallback = `https://${supabaseHost}/auth/v1/callback`;
+      if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
+        console.log(`📡 [PROXY DEBUG] Intercepted Supabase host in redirect.`);
 
-      const encodedSupabase = encodeURIComponent(supabaseCallback);
-      const encodedProxy = encodeURIComponent(proxyCallback);
+        // Replace literal host
+        let newLoc = loc.replace(new RegExp(supabaseHost, 'gi'), currentHost + '/supabase-proxy');
 
-      if (loc.includes(supabaseHost) && loc.includes('/auth/v1/callback')) {
-        console.log(`📡 [PROXY DEBUG] Found OAuth redirect to: ${supabaseHost}`);
+        // Replace encoded host
+        const encodedSupabase = encodeURIComponent(supabaseHost);
+        const encodedProxy = encodeURIComponent(currentHost + '/supabase-proxy');
+        newLoc = newLoc.replace(new RegExp(encodedSupabase, 'gi'), encodedProxy);
 
-        headers['location'] = loc
-          .split(encodedSupabase).join(encodedProxy)
-          .split(supabaseCallback).join(proxyCallback)
-          .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(currentHost + '/supabase-proxy'));
+        // Fix potential protocol double-slashes from aggressive replace
+        newLoc = newLoc.replace(/([^:])\/\//g, '$1/');
 
-        console.log(`✅ [PROXY DEBUG] Rewritten Location to Proxy`);
+        headers['location'] = newLoc;
+        console.log(`✅ [PROXY DEBUG] Rewritten Location to use Proxy tunnel`);
       }
     }
     return headers;
