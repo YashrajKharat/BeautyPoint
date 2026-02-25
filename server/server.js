@@ -41,16 +41,16 @@ const rawUrl = process.env.SUPABASE_URL || '';
 const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 
 // ✅ SUPABASE PROXY (ISP Bypass & Auth Handshake)
-// Handles both /supabase-proxy (API) and /auth (Clean Handshake for Google)
-app.use(['/supabase-proxy', '/auth'], (req, res, next) => {
+// Handles /auth, /rest, and /storage directly at the root for a "Clean Handshake"
+app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
   if (req.originalUrl.includes('/auth/v1/')) {
     console.log(`📡 [AUTH] ${req.method} ${req.originalUrl}`);
   }
   next();
 }, proxy(cleanSupabaseUrl, {
   proxyReqPathResolver: (req) => {
-    // If request comes through /supabase-proxy, use req.url (the subpath)
-    // If it comes through root /auth, use req.originalUrl (the full path)
+    // If request comes through /supabase-proxy, use subpath
+    // If it comes through root /auth, /rest, or /storage, use originalUrl
     return req.baseUrl === '/supabase-proxy' ? req.url : req.originalUrl;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
@@ -82,13 +82,13 @@ app.use(['/supabase-proxy', '/auth'], (req, res, next) => {
 
       if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
         // Rewrite Supabase -> Render (Proxy)
-        // Since we now support /auth at the root, we don't need to force /supabase-proxy prefix
+        // Since we now support root paths, we can use the clean host
         headers['location'] = loc
           .split(supabaseHost).join(`${currentHost}`)
           .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${currentHost}`))
           .replace(/([^:])\/\//g, '$1/');
 
-        console.log(`🔄 [REDIRECT] Patched to Proxy: ${headers['location'].split('?')[0]}`);
+        console.log(`🔄 [REDIRECT] Patched to: ${headers['location'].split('?')[0]}`);
       }
     }
 
