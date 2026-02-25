@@ -123,11 +123,36 @@ app.use('/supabase-proxy', (req, res, next) => {
   next();
 }, proxy(cleanSupabaseUrl, {
   proxyReqPathResolver: (req) => {
-    // req.url is the path after /supabase-proxy
+    // Forward everything after /supabase-proxy to the clean Supabase URL
     return req.url;
   },
+  proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+    // ✅ CRITICAL: Tell Supabase we are using a proxy
+    proxyReqOpts.headers['x-forwarded-host'] = 'beautypoint.onrender.com';
+    proxyReqOpts.headers['x-forwarded-proto'] = 'https';
+    return proxyReqOpts;
+  },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
+    // 1. Ensure CORS headers are present for the frontend
     headers['access-control-allow-origin'] = '*';
+
+    // 2. ✅ OAUTH FIX: Rewrite Location header for Google/GitHub/etc
+    // If Supabase sends a redirect to Google, we MUST rewrite the redirect_uri
+    // to point back to our proxy instead of directly to supabase.co
+    if (headers['location']) {
+      let loc = headers['location'];
+      if (loc.includes('redirect_uri=') && loc.includes(cleanSupabaseUrl)) {
+        console.log('🔄 Rewriting OAuth redirect_uri to use the Proxy tunnel...');
+        const proxyCallback = 'https://beautypoint.onrender.com/supabase-proxy/auth/v1/callback';
+        headers['location'] = loc.replace(
+          encodeURIComponent(`${cleanSupabaseUrl}/auth/v1/callback`),
+          encodeURIComponent(proxyCallback)
+        ).replace(
+          `${cleanSupabaseUrl}/auth/v1/callback`,
+          proxyCallback
+        );
+      }
+    }
     return headers;
   },
   proxyErrorHandler: (err, res, next) => {
