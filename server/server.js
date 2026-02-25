@@ -128,33 +128,37 @@ app.use('/supabase-proxy', (req, res, next) => {
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
     // ✅ CRITICAL: Tell Supabase we are using a proxy
-    proxyReqOpts.headers['x-forwarded-host'] = 'beautypoint.onrender.com';
+    const host = srcReq.headers.host || 'beautypoint.onrender.com';
+    proxyReqOpts.headers['x-forwarded-host'] = host;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
+    proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
     return proxyReqOpts;
   },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
     // 1. Ensure CORS headers are present for the frontend
     headers['access-control-allow-origin'] = '*';
 
-    // 2. ✅ OAUTH FIX: Rewrite Location header for Google/GitHub/etc
+    // 2. ✅ OAUTH FIX: Aggressively rewrite Location header
     if (headers['location']) {
       const loc = headers['location'];
-      const proxyHost = 'beautypoint.onrender.com';
-      const proxyCallback = `https://${proxyHost}/supabase-proxy/auth/v1/callback`;
-      const supabaseCallback = `${cleanSupabaseUrl}/auth/v1/callback`;
+      const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
+      const proxyCallback = `https://${currentHost}/supabase-proxy/auth/v1/callback`;
 
-      // Check for both literal and encoded versions
+      const supabaseHost = cleanSupabaseUrl.replace('https://', '');
+      const supabaseCallback = `https://${supabaseHost}/auth/v1/callback`;
+
       const encodedSupabase = encodeURIComponent(supabaseCallback);
       const encodedProxy = encodeURIComponent(proxyCallback);
 
-      if (loc.includes(encodedSupabase) || loc.includes(supabaseCallback)) {
-        console.log(`� [PROXY DEBUG] Found OAuth redirect. Original: ${loc.substring(0, 100)}...`);
+      if (loc.includes(supabaseHost) && loc.includes('/auth/v1/callback')) {
+        console.log(`📡 [PROXY DEBUG] Found OAuth redirect to: ${supabaseHost}`);
 
         headers['location'] = loc
           .split(encodedSupabase).join(encodedProxy)
-          .split(supabaseCallback).join(proxyCallback);
+          .split(supabaseCallback).join(proxyCallback)
+          .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(currentHost + '/supabase-proxy'));
 
-        console.log(`✅ [PROXY DEBUG] Rewritten Location to use: ${proxyHost}`);
+        console.log(`✅ [PROXY DEBUG] Rewritten Location to Proxy`);
       }
     }
     return headers;
