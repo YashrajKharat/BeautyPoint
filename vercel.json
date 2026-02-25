@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/supabase-proxy/:path*",
+            "destination": "https://beautypoint.onrender.com/:path*"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

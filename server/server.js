@@ -40,11 +40,12 @@ const app = express();
 const rawUrl = process.env.SUPABASE_URL || '';
 const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 
-// ✅ SUPABASE PROXY (ISP Bypass & Auth Handshake)
-// Handles /auth, /rest, and /storage directly at the root for a "Clean Handshake"
+// ✅ SUPABASE PROXY (Universal ISP Bypass)
 app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
-  if (req.originalUrl.includes('/auth/v1/')) {
-    console.log(`📡 [AUTH] ${req.method} ${req.originalUrl}`);
+  const isAuth = req.originalUrl.includes('/auth/v1/');
+  const isStorage = req.originalUrl.includes('/storage/v1/');
+  if (isAuth || isStorage) {
+    console.log(`📡 [PROXY] ${req.method} ${req.originalUrl}`);
   }
   next();
 }, proxy(cleanSupabaseUrl, {
@@ -72,7 +73,10 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     return proxyReqOpts;
   },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
+    // ✅ PERMISSIVE CORS (Crucial for Images & Auth on Mobile)
     headers['access-control-allow-origin'] = '*';
+    headers['access-control-allow-methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+    headers['access-control-allow-headers'] = 'Content-Type, Authorization, x-client-info, apikey';
 
     // ✅ REWRITE REDIRECTS
     if (headers['location']) {
@@ -113,10 +117,11 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
         const bodyStr = proxyResData.toString('utf8');
         const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
         const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
+        const prefix = userReq.baseUrl === '/supabase-proxy' ? '/supabase-proxy' : '';
 
         if (bodyStr.includes(supabaseHost)) {
           return bodyStr
-            .split(supabaseHost).join(`${currentHost}`)
+            .split(supabaseHost).join(`${currentHost}${prefix}`)
             .replace(/([^:])\/\//g, '$1/');
         }
       } catch (e) {
