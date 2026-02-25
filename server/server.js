@@ -55,19 +55,26 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     return req.baseUrl === '/supabase-proxy' ? req.url : req.originalUrl;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // 1. DETECT TRUE HOST (Splitting to handle comma-separated lists from Vercel/Render)
+    // 1. HOST LOCK: Aggressively detect the browser's domain
+    // We check X-Forwarded-Host (from Vercel) first, then Host, then fallback.
     const rawForwardedHost = srcReq.headers['x-forwarded-host'] || '';
     const firstHost = rawForwardedHost.split(',')[0].trim();
-    const trueHost = firstHost || srcReq.headers.host || 'beautypoint.onrender.com';
+
+    // If we see 'vercel.app' anywhere, lock it in. This fixes the PKCE mismatch.
+    let trueHost = firstHost || srcReq.headers.host || 'beautypoint.onrender.com';
+    if (srcReq.headers.referer && srcReq.headers.referer.includes('vercel.app')) {
+      const refHost = new URL(srcReq.headers.referer).host;
+      if (refHost.includes('vercel.app')) trueHost = refHost;
+    }
 
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-    // ✅ DEEP LOGGING: Reveal the exact host Supabase will use
+    // ✅ CRITICAL DEBUG: This host MUST match your Google Redirect URI exactly
     if (srcReq.originalUrl.includes('/auth/v1/')) {
-      console.log(`📡 [AUTH REQ] Extracted Host: ${trueHost} | Raw X-F-H: ${rawForwardedHost}`);
+      console.log(`📡 [AUTH REQ] Extracted Host: ${trueHost} | Path: ${srcReq.originalUrl}`);
     }
 
-    // ✅ CRITICAL: Supabase builds redirect_uri using these headers
+    // ✅ FORCE SYNC: These headers tell Supabase how to build the Google handshake
     proxyReqOpts.headers['x-forwarded-host'] = trueHost;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
     proxyReqOpts.headers['x-forwarded-port'] = '443';
@@ -143,7 +150,9 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
   proxyErrorHandler: (err, res, next) => {
     console.error('❌ [PROXY ERROR]', err.message);
     res.status(502).json({ message: 'Supabase Proxy Error', detail: err.message });
-  }
+  },
+  // Ensure we don't mangle the raw code/token during exchange
+  parseReqBody: false
 }));
 
 // ✅ SECURITY: Set trust proxy for deployment
