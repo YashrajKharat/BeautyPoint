@@ -4,11 +4,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ✅ ACCESSIBILITY: Point to the Proxy
-// If we are on Vercel, use the local /supabase-proxy path to ensure PKCE stability
-// This keeps the browser on the same domain and fixes the "Unable to store session" issue
+// On Vercel, we use the local root domain. Vercel rewrites handle /auth, /rest, and /storage.
+// This ensures the browser stays on one domain, fixing the "Unable to store session" bug.
 const isVercel = window.location.hostname.includes('vercel.app');
 const finalSupabaseUrl = isVercel
-    ? window.location.origin + '/supabase-proxy'
+    ? window.location.origin
     : (supabaseUrl || 'https://beautypoint.onrender.com');
 
 if (!finalSupabaseUrl || !supabaseKey) {

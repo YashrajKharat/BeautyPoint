@@ -59,7 +59,12 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     const trueHost = srcReq.headers['x-forwarded-host'] || srcReq.headers.host || 'beautypoint.onrender.com';
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-    // ✅ CRITICAL: Supabase must build redirect_uri on the browser's current domain
+    // ✅ DEEP LOGGING: Reveal the hidden host for mismatch debugging
+    if (srcReq.originalUrl.includes('/auth/v1/')) {
+      console.log(`📡 [AUTH REQ] Host: ${trueHost} | Path: ${srcReq.originalUrl}`);
+    }
+
+    // ✅ CRITICAL: Supabase builds redirect_uri using x-forwarded-host
     proxyReqOpts.headers['x-forwarded-host'] = trueHost;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
     proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
@@ -108,7 +113,7 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
     return headers;
   },
   userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-    // Rewrite Supabase URLs in JSON
+    // Rewrite Supabase URLs in JSON (Literal + Encoded)
     if (proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('application/json')) {
       try {
         const bodyStr = proxyResData.toString('utf8');
@@ -117,8 +122,10 @@ app.use(['/supabase-proxy', '/auth', '/rest', '/storage'], (req, res, next) => {
         const prefix = userReq.baseUrl === '/supabase-proxy' ? '/supabase-proxy' : '';
 
         if (bodyStr.includes(supabaseHost)) {
+          // Replace both literal and URI encoded versions for maximum image compatibility
           return bodyStr
             .split(supabaseHost).join(`${trueHost}${prefix}`)
+            .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${trueHost}${prefix}`))
             .replace(/([^:])\/\//g, '$1/');
         }
       } catch (e) {
