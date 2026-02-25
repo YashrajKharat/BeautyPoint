@@ -182,14 +182,23 @@ app.get('/api/image/:filename', (req, res) => {
 });
 
 // ✅ ACCESSIBILITY: Supabase Proxy for ISP Bypass
-app.use('/supabase-proxy', proxy(process.env.SUPABASE_URL, {
+// This allows Indian customers to reach Supabase via your Render domain
+const rawUrl = process.env.SUPABASE_URL || '';
+const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
+app.use('/supabase-proxy', proxy(cleanSupabaseUrl, {
   proxyReqPathResolver: (req) => {
-    return req.url; // Forward the rest of the path
+    // Forward everything after /supabase-proxy to the clean Supabase URL
+    return req.url;
   },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
-    // Add CORS if missing (Supabase usually has it, but just in case)
+    // Ensure CORS headers are present for the frontend
     headers['access-control-allow-origin'] = '*';
     return headers;
+  },
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Proxy Error:', err);
+    res.status(502).json({ message: 'Supabase Proxy Error', detail: err.message });
   }
 }));
 
