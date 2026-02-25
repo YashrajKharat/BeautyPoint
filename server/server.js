@@ -119,58 +119,61 @@ const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 console.log(`📡 Supabase Proxy initialized for: ${cleanSupabaseUrl}`);
 
 app.use('/supabase-proxy', (req, res, next) => {
-  console.log(`🔄 Proxying ${req.method} ${req.originalUrl} to Supabase...`);
+  // Catch any errors passed back from Supabase in the URL
+  if (req.query.error || req.query.error_description) {
+    console.error(`❌ Supabase Auth Error received at Proxy: ${req.query.error} - ${req.query.error_description}`);
+  }
   next();
 }, proxy(cleanSupabaseUrl, {
   proxyReqPathResolver: (req) => {
-    // Forward everything after /supabase-proxy to the clean Supabase URL
     return req.url;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // ✅ CRITICAL: Tell Supabase we are using a proxy
+    // 1. Set Forwarded headers
     const host = srcReq.headers.host || 'beautypoint.onrender.com';
     proxyReqOpts.headers['x-forwarded-host'] = host;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
-    proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
+
+    // 2. ✅ CRITICAL: Strip Origin and Referer to avoid Supabase CORS/Session rejection
+    // Supabase gets confused if the Origin is 'vercel.app' but it's being proxied.
+    delete proxyReqOpts.headers['origin'];
+    delete proxyReqOpts.headers['referer'];
+
     return proxyReqOpts;
   },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
-    // 1. Ensure CORS headers are present for the frontend
     headers['access-control-allow-origin'] = '*';
 
-    // 2. ✅ OAUTH FIX: Ultra-Aggressive Rewrite
+    // ✅ OAUTH REDIRECT REWRITING
     if (headers['location']) {
       let loc = Array.isArray(headers['location']) ? headers['location'][0] : headers['location'];
       const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
       const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
+      // If the redirect location contains the Supabase domain, we MUST rewrite it
       if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
-        console.log(`📡 [PROXY DEBUG] Intercepted Supabase host in redirect.`);
+        console.log('� Intercepting Supabase redirect, swapping for Proxy domain...');
 
-        // Replace literal host
-        let newLoc = loc.replace(new RegExp(supabaseHost, 'gi'), currentHost + '/supabase-proxy');
+        // 1. Swap the host for the proxy address
+        let newLoc = loc.replace(new RegExp(supabaseHost, 'gi'), `${currentHost}/supabase-proxy`);
 
-        // Replace encoded host
+        // 2. Swap encoded versions too (Google/OAuth callback params)
         const encodedSupabase = encodeURIComponent(supabaseHost);
-        const encodedProxy = encodeURIComponent(currentHost + '/supabase-proxy');
+        const encodedProxy = encodeURIComponent(`${currentHost}/supabase-proxy`);
         newLoc = newLoc.replace(new RegExp(encodedSupabase, 'gi'), encodedProxy);
 
-        // Fix potential protocol double-slashes from aggressive replace
+        // 3. Cleanup double slashes but keep protocol slashes
         newLoc = newLoc.replace(/([^:])\/\//g, '$1/');
 
         headers['location'] = newLoc;
-        console.log(`✅ [PROXY DEBUG] Rewritten Location to use Proxy tunnel`);
+        console.log('✅ Redirect URI successfully tunneled through Proxy');
       }
     }
     return headers;
   },
   proxyErrorHandler: (err, res, next) => {
-    console.error('❌ Proxy Error:', err);
-    res.status(502).json({
-      message: 'Supabase Proxy Error',
-      detail: err.message,
-      target: cleanSupabaseUrl
-    });
+    console.error('❌ Proxy Connection Error:', err);
+    res.status(502).json({ message: 'Supabase Proxy Error', detail: err.message });
   }
 }));
 
