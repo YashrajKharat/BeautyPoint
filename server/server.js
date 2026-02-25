@@ -36,41 +36,31 @@ import { verifySMSConfig } from './utils/smsService.js';
 
 const app = express();
 
-// ✅ ACCESSIBILITY: Supabase Proxy for ISP Bypass (HIGHEST PRIORITY)
-const rawUrl = process.env.SUPABASE_URL || '';
-const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-
-app.use('/supabase-proxy', (req, res, next) => {
-  // Enhanced logging only for auth attempts to help debug
+// ✅ SUPABASE PROXY (ISP Bypass & Auth Handshake)
+// Handles both /supabase-proxy (API) and /auth (Clean Handshake for Google)
+app.use(['/supabase-proxy', '/auth'], (req, res, next) => {
   if (req.originalUrl.includes('/auth/v1/')) {
     console.log(`📡 [AUTH] ${req.method} ${req.originalUrl}`);
-    if (req.query.error) {
-      console.error(`❌ [AUTH ERROR] ${req.query.error}: ${req.query.error_description}`);
-    }
   }
   next();
 }, proxy(cleanSupabaseUrl, {
   proxyReqPathResolver: (req) => {
-    return req.url;
+    // If request comes through /supabase-proxy, use req.url (the subpath)
+    // If it comes through root /auth, use req.originalUrl (the full path)
+    return req.baseUrl === '/supabase-proxy' ? req.url : req.originalUrl;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
     const host = srcReq.headers.host || 'beautypoint.onrender.com';
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-    // 1. DYNAMIC FORWARDING HEADERS
+    // ✅ CRITICAL OAUTH FIX: 
+    // We MUST send ONLY the domain in x-forwarded-host. 
+    // GoTrue will then use this clean domain to build the Google redirect_uri.
     proxyReqOpts.headers['x-forwarded-host'] = host;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
     proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
-    proxyReqOpts.headers['x-forwarded-prefix'] = '/supabase-proxy';
 
-    // ✅ OAUTH HANDSHAKE FIX:
-    // Some GoTrue versions strictly require the path prefix in x-forwarded-host
-    // Affects both /callback (Google -> Proxy) and /token (Browser -> Proxy)
-    if (srcReq.originalUrl.includes('/auth/v1/')) {
-      proxyReqOpts.headers['x-forwarded-host'] = `${host}/supabase-proxy`;
-    }
-
-    // ✅ HOST SPOOFING: Make Supabase think the request is direct
+    // Host Spoofing: Make Supabase accept the request
     proxyReqOpts.headers['host'] = supabaseHost;
     proxyReqOpts.headers['origin'] = cleanSupabaseUrl;
     proxyReqOpts.headers['referer'] = cleanSupabaseUrl + '/';
@@ -80,22 +70,21 @@ app.use('/supabase-proxy', (req, res, next) => {
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
     headers['access-control-allow-origin'] = '*';
 
-    // ✅ UNIVERSAL LOCATION REWRITER
+    // ✅ REWRITE REDIRECTS
     if (headers['location']) {
       let loc = Array.isArray(headers['location']) ? headers['location'][0] : headers['location'];
       const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
       const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
       if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
-        // Rewrite literal, encoded, and double-slashes in one pass
+        // Rewrite Supabase -> Render (Proxy)
+        // Since we now support /auth at the root, we don't need to force /supabase-proxy prefix
         headers['location'] = loc
-          .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
-          .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${currentHost}/supabase-proxy`))
+          .split(supabaseHost).join(`${currentHost}`)
+          .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${currentHost}`))
           .replace(/([^:])\/\//g, '$1/');
 
-        if (loc.includes('/auth/v1/authorize')) {
-          console.log(`🔄 [OAUTH] Redirecting to Google with Proxied URI`);
-        }
+        console.log(`🔄 [REDIRECT] Patched to Proxy: ${headers['location'].split('?')[0]}`);
       }
     }
 
@@ -103,7 +92,12 @@ app.use('/supabase-proxy', (req, res, next) => {
     if (headers['set-cookie']) {
       const supabaseDomain = cleanSupabaseUrl.replace('https://', '').split('/')[0];
       const proxyDomain = (userReq.headers.host || 'beautypoint.onrender.com').split(':')[0];
-      headers['set-cookie'] = headers['set-cookie'].map(cookie => cookie.replace(new RegExp(supabaseDomain, 'gi'), proxyDomain));
+      headers['set-cookie'] = headers['set-cookie'].map(cookie => {
+        // Force SameSite=None; Secure for cross-origin auth stability
+        return cookie
+          .replace(new RegExp(supabaseDomain, 'gi'), proxyDomain)
+          .replace(/SameSite=Lax/gi, 'SameSite=None; Secure');
+      });
     }
 
     return headers;
@@ -118,7 +112,7 @@ app.use('/supabase-proxy', (req, res, next) => {
 
         if (bodyStr.includes(supabaseHost)) {
           return bodyStr
-            .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
+            .split(supabaseHost).join(`${currentHost}`)
             .replace(/([^:])\/\//g, '$1/');
         }
       } catch (e) {
