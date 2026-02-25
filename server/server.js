@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import proxy from 'express-http-proxy';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -59,7 +60,7 @@ app.use(helmet({
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? (process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-    : ['https://yourdomain.com'])
+    : ['https://beauty-point-hqp4.vercel.app'])
   : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
 
 app.use(cors({
@@ -179,6 +180,18 @@ app.get('/api/image/:filename', (req, res) => {
     }
   });
 });
+
+// ✅ ACCESSIBILITY: Supabase Proxy for ISP Bypass
+app.use('/supabase-proxy', proxy(process.env.SUPABASE_URL, {
+  proxyReqPathResolver: (req) => {
+    return req.url; // Forward the rest of the path
+  },
+  userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
+    // Add CORS if missing (Supabase usually has it, but just in case)
+    headers['access-control-allow-origin'] = '*';
+    return headers;
+  }
+}));
 
 // ✅ SECURITY: Health check endpoint
 app.get('/api/health', (req, res) => {
