@@ -41,8 +41,12 @@ const rawUrl = process.env.SUPABASE_URL || '';
 const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 
 app.use('/supabase-proxy', (req, res, next) => {
-  if (req.query.error || req.query.error_description) {
-    console.error(`❌ [PROXY] Supabase Auth Error: ${req.query.error} - ${req.query.error_description}`);
+  // Enhanced logging only for auth attempts to help debug
+  if (req.originalUrl.includes('/auth/v1/')) {
+    console.log(`📡 [AUTH] ${req.method} ${req.originalUrl}`);
+    if (req.query.error) {
+      console.error(`❌ [AUTH ERROR] ${req.query.error}: ${req.query.error_description}`);
+    }
   }
   next();
 }, proxy(cleanSupabaseUrl, {
@@ -53,15 +57,20 @@ app.use('/supabase-proxy', (req, res, next) => {
     const host = srcReq.headers.host || 'beautypoint.onrender.com';
     const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
+    // 1. DYNAMIC FORWARDING HEADERS
     proxyReqOpts.headers['x-forwarded-host'] = host;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
     proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
     proxyReqOpts.headers['x-forwarded-prefix'] = '/supabase-proxy';
 
-    if (srcReq.originalUrl.includes('/auth/v1/callback')) {
+    // ✅ OAUTH HANDSHAKE FIX:
+    // Some GoTrue versions strictly require the path prefix in x-forwarded-host
+    // Affects both /callback (Google -> Proxy) and /token (Browser -> Proxy)
+    if (srcReq.originalUrl.includes('/auth/v1/')) {
       proxyReqOpts.headers['x-forwarded-host'] = `${host}/supabase-proxy`;
     }
 
+    // ✅ HOST SPOOFING: Make Supabase think the request is direct
     proxyReqOpts.headers['host'] = supabaseHost;
     proxyReqOpts.headers['origin'] = cleanSupabaseUrl;
     proxyReqOpts.headers['referer'] = cleanSupabaseUrl + '/';
@@ -70,41 +79,57 @@ app.use('/supabase-proxy', (req, res, next) => {
   },
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
     headers['access-control-allow-origin'] = '*';
+
+    // ✅ UNIVERSAL LOCATION REWRITER
     if (headers['location']) {
       let loc = Array.isArray(headers['location']) ? headers['location'][0] : headers['location'];
       const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
       const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
       if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
+        // Rewrite literal, encoded, and double-slashes in one pass
         headers['location'] = loc
           .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
           .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${currentHost}/supabase-proxy`))
           .replace(/([^:])\/\//g, '$1/');
+
+        if (loc.includes('/auth/v1/authorize')) {
+          console.log(`🔄 [OAUTH] Redirecting to Google with Proxied URI`);
+        }
       }
     }
+
+    // ✅ COOKIE REWRITING (For session storage)
     if (headers['set-cookie']) {
       const supabaseDomain = cleanSupabaseUrl.replace('https://', '').split('/')[0];
       const proxyDomain = (userReq.headers.host || 'beautypoint.onrender.com').split(':')[0];
       headers['set-cookie'] = headers['set-cookie'].map(cookie => cookie.replace(new RegExp(supabaseDomain, 'gi'), proxyDomain));
     }
+
     return headers;
   },
   userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+    // Rewrite Supabase URLs in JSON bodies (important for Auth responses)
     if (proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('application/json')) {
       try {
         const bodyStr = proxyResData.toString('utf8');
         const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
         const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
+
         if (bodyStr.includes(supabaseHost)) {
-          return bodyStr.split(supabaseHost).join(`${currentHost}/supabase-proxy`).replace(/([^:])\/\//g, '$1/');
+          return bodyStr
+            .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
+            .replace(/([^:])\/\//g, '$1/');
         }
-      } catch (e) { }
+      } catch (e) {
+        return proxyResData;
+      }
     }
     return proxyResData;
   },
   proxyErrorHandler: (err, res, next) => {
-    console.error('❌ Proxy Connection Error:', err);
-    res.status(502).json({ message: 'Supabase Proxy Error' });
+    console.error('❌ [PROXY ERROR]', err.message);
+    res.status(502).json({ message: 'Supabase Proxy Error', detail: err.message });
   }
 }));
 
