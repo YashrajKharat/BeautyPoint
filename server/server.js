@@ -111,6 +111,35 @@ app.use('/uploads', (req, res, next) => {
   next();
 });
 
+// ✅ ACCESSIBILITY: Supabase Proxy for ISP Bypass (HIGH PRIORITY)
+// This must be BEFORE other routes to ensure it catches traffic
+const rawUrl = process.env.SUPABASE_URL || '';
+const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+
+console.log(`📡 Supabase Proxy initialized for: ${cleanSupabaseUrl}`);
+
+app.use('/supabase-proxy', (req, res, next) => {
+  console.log(`🔄 Proxying ${req.method} ${req.originalUrl} to Supabase...`);
+  next();
+}, proxy(cleanSupabaseUrl, {
+  proxyReqPathResolver: (req) => {
+    // req.url is the path after /supabase-proxy
+    return req.url;
+  },
+  userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
+    headers['access-control-allow-origin'] = '*';
+    return headers;
+  },
+  proxyErrorHandler: (err, res, next) => {
+    console.error('❌ Proxy Error:', err);
+    res.status(502).json({
+      message: 'Supabase Proxy Error',
+      detail: err.message,
+      target: cleanSupabaseUrl
+    });
+  }
+}));
+
 // Serve static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -180,27 +209,6 @@ app.get('/api/image/:filename', (req, res) => {
     }
   });
 });
-
-// ✅ ACCESSIBILITY: Supabase Proxy for ISP Bypass
-// This allows Indian customers to reach Supabase via your Render domain
-const rawUrl = process.env.SUPABASE_URL || '';
-const cleanSupabaseUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-
-app.use('/supabase-proxy', proxy(cleanSupabaseUrl, {
-  proxyReqPathResolver: (req) => {
-    // Forward everything after /supabase-proxy to the clean Supabase URL
-    return req.url;
-  },
-  userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
-    // Ensure CORS headers are present for the frontend
-    headers['access-control-allow-origin'] = '*';
-    return headers;
-  },
-  proxyErrorHandler: (err, res, next) => {
-    console.error('Proxy Error:', err);
-    res.status(502).json({ message: 'Supabase Proxy Error', detail: err.message });
-  }
-}));
 
 // ✅ SECURITY: Health check endpoint
 app.get('/api/health', (req, res) => {
