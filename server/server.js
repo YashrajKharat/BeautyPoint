@@ -129,13 +129,19 @@ app.use('/supabase-proxy', (req, res, next) => {
     return req.url;
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // 1. Set Forwarded headers
+    // 1. DYNAMIC FORWARDING HEADERS
     const host = srcReq.headers.host || 'beautypoint.onrender.com';
     proxyReqOpts.headers['x-forwarded-host'] = host;
     proxyReqOpts.headers['x-forwarded-proto'] = 'https';
+    proxyReqOpts.headers['x-forwarded-for'] = srcReq.ip || srcReq.headers['x-forwarded-for'];
+    proxyReqOpts.headers['x-forwarded-prefix'] = '/supabase-proxy';
 
-    // 2. ✅ CRITICAL: Strip Origin and Referer to avoid Supabase CORS/Session rejection
-    // Supabase gets confused if the Origin is 'vercel.app' but it's being proxied.
+    // ✅ OAUTH HANDSHAKE FIX:
+    if (srcReq.originalUrl.includes('/auth/v1/callback')) {
+      proxyReqOpts.headers['x-forwarded-host'] = `${host}/supabase-proxy`;
+    }
+
+    // 2. SECRECY: Remove headers that might cause Supabase to reject the proxy
     delete proxyReqOpts.headers['origin'];
     delete proxyReqOpts.headers['referer'];
 
@@ -144,32 +150,48 @@ app.use('/supabase-proxy', (req, res, next) => {
   userResHeaderDecorator: (headers, userReq, userRes, proxyReq, proxyRes) => {
     headers['access-control-allow-origin'] = '*';
 
-    // ✅ OAUTH REDIRECT REWRITING
+    // 1. ✅ REDIRECT REWRITING
     if (headers['location']) {
       let loc = Array.isArray(headers['location']) ? headers['location'][0] : headers['location'];
       const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
       const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
 
-      // If the redirect location contains the Supabase domain, we MUST rewrite it
       if (loc.toLowerCase().includes(supabaseHost.toLowerCase())) {
-        console.log('� Intercepting Supabase redirect, swapping for Proxy domain...');
-
-        // 1. Swap the host for the proxy address
-        let newLoc = loc.replace(new RegExp(supabaseHost, 'gi'), `${currentHost}/supabase-proxy`);
-
-        // 2. Swap encoded versions too (Google/OAuth callback params)
-        const encodedSupabase = encodeURIComponent(supabaseHost);
-        const encodedProxy = encodeURIComponent(`${currentHost}/supabase-proxy`);
-        newLoc = newLoc.replace(new RegExp(encodedSupabase, 'gi'), encodedProxy);
-
-        // 3. Cleanup double slashes but keep protocol slashes
-        newLoc = newLoc.replace(/([^:])\/\//g, '$1/');
-
-        headers['location'] = newLoc;
-        console.log('✅ Redirect URI successfully tunneled through Proxy');
+        headers['location'] = loc
+          .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
+          .split(encodeURIComponent(supabaseHost)).join(encodeURIComponent(`${currentHost}/supabase-proxy`))
+          .replace(/([^:])\/\//g, '$1/');
       }
     }
+
+    // 2. ✅ COOKIE REWRITING
+    if (headers['set-cookie']) {
+      const supabaseDomain = cleanSupabaseUrl.replace('https://', '').split('/')[0];
+      const proxyDomain = (userReq.headers.host || 'beautypoint.onrender.com').split(':')[0];
+      headers['set-cookie'] = headers['set-cookie'].map(cookie => cookie.replace(new RegExp(supabaseDomain, 'gi'), proxyDomain));
+    }
+
     return headers;
+  },
+  // 3. ✅ JSON BODY REWRITING
+  userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+    if (proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('application/json')) {
+      try {
+        const bodyStr = proxyResData.toString('utf8');
+        const supabaseHost = cleanSupabaseUrl.replace('https://', '').replace('http://', '');
+        const currentHost = userReq.headers.host || 'beautypoint.onrender.com';
+
+        if (bodyStr.includes(supabaseHost)) {
+          const patchedBody = bodyStr
+            .split(supabaseHost).join(`${currentHost}/supabase-proxy`)
+            .replace(/([^:])\/\//g, '$1/');
+          return patchedBody;
+        }
+      } catch (e) {
+        return proxyResData;
+      }
+    }
+    return proxyResData;
   },
   proxyErrorHandler: (err, res, next) => {
     console.error('❌ Proxy Connection Error:', err);
