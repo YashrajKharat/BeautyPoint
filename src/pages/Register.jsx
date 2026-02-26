@@ -18,7 +18,6 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [adminExists, setAdminExists] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  const { loginWithGoogle } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Validation rules
@@ -220,22 +219,7 @@ export default function Register() {
               </div>
             )}
 
-            {/* Google Login Button */}
-            <div className="social-auth">
-              <button
-                type="button"
-                className="google-auth-btn"
-                onClick={loginWithGoogle}
-                disabled={isLoading}
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="google-icon" />
-                Continue with Google
-              </button>
-
-              <div className="auth-divider">
-                <span>or register with email</span>
-              </div>
-            </div>
+            {/* Removed Google Login Button */}
 
             {/* Registration Form */}
             <form onSubmit={handleSubmit} className="auth-form">

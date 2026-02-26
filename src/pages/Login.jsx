@@ -14,7 +14,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  const { login, loginWithGoogle } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Validation rules
@@ -182,22 +182,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* Google Login Button */}
-            <div className="social-auth">
-              <button
-                type="button"
-                className="google-auth-btn"
-                onClick={loginWithGoogle}
-                disabled={isLoading}
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="google-icon" />
-                Continue with Google
-              </button>
-
-              <div className="auth-divider">
-                <span>or log in with email</span>
-              </div>
-            </div>
+            {/* Removed Google Login Button */}
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="auth-form">
