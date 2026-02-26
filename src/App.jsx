@@ -9,7 +9,7 @@ import ChatBot from './components/ChatBot.jsx';
 import Home from './pages/Home.jsx';
 import Products from './pages/Products.jsx';
 import Login from './pages/Login.jsx';
-// import Register from './pages/Register.jsx';
+import Register from './pages/Register.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Cart from './pages/Cart.jsx';
@@ -39,6 +39,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
