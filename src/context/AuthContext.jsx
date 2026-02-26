@@ -147,9 +147,9 @@ export const AuthProvider = ({ children }) => {
       logout,
       getProfile,
       updateProfile
-
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
