@@ -14,7 +14,7 @@
         },
         {
             "source": "/supabase-proxy/:path*",
-            "destination": "https://beautypoint.onrender.com/:path*"
+            "destination": "https://beautypoint.onrender.com/supabase-proxy/:path*"
         },
         {
             "source": "/(.*)",
