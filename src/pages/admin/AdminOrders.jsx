@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { orderAPI } from '../../services/api.js';
+import { getImageUrl } from '../../utils/imageHelper.js';
 import '../../css/admin-light.css';
 
 export default function AdminOrders() {
@@ -178,7 +179,7 @@ export default function AdminOrders() {
                               {orderItems.map((item, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #eee' }}>
                                   <img
-                                    src={item.products?.images?.[0] || 'https://via.placeholder.com/50'}
+                                    src={item.products?.images?.[0] ? getImageUrl(item.products.images[0]) : 'https://via.placeholder.com/50'}
                                     alt={item.products?.name}
                                     style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }}
                                   />

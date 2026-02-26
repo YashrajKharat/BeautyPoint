@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { productAPI } from '../../services/api.js';
+import { getImageUrl } from '../../utils/imageHelper.js';
 import '../../css/admin-light.css';
 
 export default function AdminProducts() {
@@ -334,12 +335,12 @@ export default function AdminProducts() {
               <div className="image-previews-container" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                 {imagePreview && !Array.isArray(imagePreview) && (
                   <div className="image-preview">
-                    <img src={imagePreview} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
+                    <img src={getImageUrl(imagePreview)} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover' }} />
                   </div>
                 )}
                 {Array.isArray(imagePreview) && imagePreview.map((src, idx) => (
                   <div key={idx} className="image-preview">
-                    <img src={src} alt={`Preview ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
+                    <img src={getImageUrl(src)} alt={`Preview ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
                   </div>
                 ))}
               </div>
