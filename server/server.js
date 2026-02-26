@@ -300,6 +300,49 @@ app.get('/api/image/:filename', (req, res) => {
   });
 });
 
+// ✅ TEMPORARY DEBUG: Test coupon creation (REMOVE AFTER DEBUGGING)
+app.get('/api/debug/test-coupon', async (req, res) => {
+  try {
+    // First: check what columns the coupons table has
+    const { data: selectData, error: selectError } = await supabase
+      .from('coupons')
+      .select('*')
+      .limit(1);
+
+    if (selectError) {
+      return res.json({ step: 'SELECT', error: selectError });
+    }
+
+    const columns = selectData && selectData.length > 0 ? Object.keys(selectData[0]) : 'TABLE_EMPTY';
+
+    // Second: try inserting the same way the controller does
+    const { data: insertData, error: insertError } = await supabase
+      .from('coupons')
+      .insert([{
+        code: 'DEBUGTEST_' + Date.now(),
+        discount_percent: 10,
+        max_uses: null,
+        expiry_date: '2030-01-01',
+        current_uses: 0
+      }])
+      .select()
+      .single();
+
+    if (insertError) {
+      return res.json({ step: 'INSERT', columns, error: insertError });
+    }
+
+    // Clean up
+    if (insertData && insertData.id) {
+      await supabase.from('coupons').delete().eq('id', insertData.id);
+    }
+
+    res.json({ step: 'SUCCESS', columns, insertedData: insertData });
+  } catch (err) {
+    res.json({ step: 'EXCEPTION', error: err.message });
+  }
+});
+
 // ✅ SECURITY: Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
