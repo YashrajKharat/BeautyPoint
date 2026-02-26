@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { userAPI } from '../services/api.js';
+import { Loader } from '../components/Loader.jsx';
 import '../css/auth-premium.css';
-import { AuthContext } from '../context/AuthContext.jsx';
 
 export default function Register() {
   const [name, setName] = useState('');
