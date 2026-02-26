@@ -210,8 +210,8 @@ const authLimiter = rateLimit({
 });
 
 app.use('/api/', limiter);
-app.use('/api/users/login', authLimiter);
-app.use('/api/users/register', authLimiter);
+// app.use('/api/users/login', authLimiter); // Disabled due to Vercel IP proxy issues
+// app.use('/api/users/register', authLimiter); // Disabled due to Vercel IP proxy issues
 
 // ✅ SECURITY: Body parser with size limits
 app.use(express.json({ limit: '10mb' }));
