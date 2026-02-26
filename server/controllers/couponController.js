@@ -29,10 +29,14 @@ export const createCoupon = async (req, res) => {
       data: newCoupon
     });
   } catch (error) {
+    console.error('❌ Coupon creation error:', error.message, error.code, error.details, error.hint);
     res.status(500).json({
       success: false,
       message: 'Failed to create coupon',
-      error: error.message
+      error: error.message,
+      details: error.details || null,
+      hint: error.hint || null,
+      code: error.code || null
     });
   }
 };
