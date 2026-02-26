@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Handle Supabase Auth Changes (Google Login Callback)
+  // Handle Supabase Auth Changes for Google
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }) => {
           const email = authUser.email;
           const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || 'Google User';
 
-          // Verify with Backend
           const response = await userAPI.googleLogin({ email, name });
 
           localStorage.setItem('token', response.data.token);
@@ -41,10 +40,11 @@ export const AuthProvider = ({ children }) => {
           setUserRole(response.data.user.role);
           setUser(response.data.user);
         } catch (error) {
-          console.error('Google Sync Failed:', error);
+          console.error('Google Auth Sync Failed:', error);
         }
       }
     });
+
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -84,35 +84,21 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const loginWithWhatsApp = useCallback(async (phone, name) => {
-    setIsLoading(true);
-    try {
-      const response = await userAPI.whatsappLogin({ phone, name });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userRole', response.data.user.role);
-      setToken(response.data.token);
-      setUserRole(response.data.user.role);
-      setUser(response.data.user);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data?.message || 'WhatsApp login failed';
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          }
         }
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Google Auth Init Failed:', error);
+      console.error('Google Auth Error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -125,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUserRole(null);
     setUser(null);
-    supabase.auth.signOut(); // Ensure Supabase session is cleared too
+    supabase.auth.signOut();
   }, []);
 
   const getProfile = useCallback(async () => {
@@ -140,14 +126,13 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = useCallback(async (data) => {
     try {
-      await userAPI.updateProfile(data);
-      // Fetch fresh profile to ensure sync
-      const userData = await getProfile();
-      return { user: userData };
+      const response = await userAPI.updateProfile(data);
+      setUser(response.data.user);
+      return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Failed to update profile';
     }
-  }, [getProfile]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{
@@ -158,11 +143,11 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!token,
       register,
       login,
-      loginWithWhatsApp,
       loginWithGoogle,
       logout,
       getProfile,
       updateProfile
+
     }}>
       {children}
     </AuthContext.Provider>

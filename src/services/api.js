@@ -26,7 +26,6 @@ api.interceptors.request.use((config) => {
 export const userAPI = {
   register: (data) => api.post('/users/register', data),
   login: (data) => api.post('/users/login', data),
-  whatsappLogin: (data) => api.post('/users/whatsapp-login', data),
   googleLogin: (data) => api.post('/users/google-login', data),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
@@ -63,12 +62,17 @@ export const orderAPI = {
   trackOrder: (id) => api.get(`/orders/${id}/track`),
   updateOrderStatus: (id, data) => api.put(`/orders/${id}/status`, data),
   cancelOrder: (id, data) => api.put(`/orders/${id}/cancel`, data),
-  requestReturn: (id) => api.put(`/orders/${id}/return`),
-  getAllOrders: () => api.get('/orders/admin/all'),
-  deleteOrder: (id) => api.delete(`/orders/${id}`)
+  getAllOrders: () => api.get('/orders/admin/all')
 };
 
-
+// Newsletter API calls
+export const newsletterAPI = {
+  subscribe: (email) => api.post('/newsletter/subscribe', { email }),
+  confirmEmail: (token) => api.get(`/newsletter/confirm/${token}`),
+  unsubscribeByToken: (token) => api.get(`/newsletter/unsubscribe/${token}`),
+  getSubscribers: () => api.get('/newsletter/subscribers'),
+  getPending: () => api.get('/newsletter/pending')
+};
 
 // Coupon API calls
 export const couponAPI = {

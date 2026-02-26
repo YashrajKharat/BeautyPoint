@@ -2,7 +2,6 @@ import express from 'express';
 import {
   registerUser,
   loginUser,
-  whatsappLogin,
   getUserProfile,
   updateUserProfile,
   getAllUsers,
@@ -28,7 +27,6 @@ const router = express.Router();
 // ✅ SECURITY: Validation added to auth routes
 router.post('/register', validateRegister, handleValidationErrors, registerUser);
 router.post('/login', validateLogin, handleValidationErrors, loginUser);
-router.post('/whatsapp-login', whatsappLogin);
 router.post('/google-login', googleLogin);
 router.get('/check-admin-exists', checkAdminExists);
 router.get('/profile', authMiddleware, getUserProfile);

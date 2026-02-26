@@ -13,25 +13,48 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid role' });
     }
 
+    // If trying to register as admin, check if admin already exists
+    if (role === 'admin') {
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('admin')
+        .select('id')
+        .limit(1);
+
+      if (adminError) throw adminError;
+
+      if (adminUsers && adminUsers.length > 0) {
+        return res.status(400).json({ message: 'Admin slot is already taken. Only one admin is allowed.' });
+      }
+
+      // Create admin in admin table (separate from users)
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const { data: admin, error: adminCreateError } = await supabase
+        .from('admin')
+        .insert([{
+          name,
+          email,
+          password: hashedPassword,
+          phone
+        }])
+        .select()
+        .single();
+
+      if (adminCreateError) throw adminCreateError;
+
+      const token = generateToken(admin.id);
+      return res.status(201).json({
+        message: 'Admin registered successfully',
+        token,
+        user: { id: admin.id, name: admin.name, email: admin.email, role: 'admin' }
+      });
+    }
+
+    // Register as regular user
     // Check if user already exists
     const existingUser = await userDB.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // If trying to register as admin, strict check for ONLY ONE admin
-    if (role === 'admin') {
-      const { data: existingAdmins, error: adminCheckError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'admin')
-        .limit(1);
-
-      if (adminCheckError) throw adminCheckError;
-
-      if (existingAdmins && existingAdmins.length > 0) {
-        return res.status(400).json({ message: 'Admin slot is already taken. Only one admin is allowed.' });
-      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -41,21 +64,14 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
-      role: role
+      role: 'user'
     });
 
     const token = generateToken(user.id);
     res.status(201).json({
-      message: role === 'admin' ? 'Admin registered successfully' : 'User registered successfully',
+      message: 'User registered successfully',
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role
-      }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
     res.status(500).json({ message: 'Registration failed', error: error.message });
@@ -64,17 +80,30 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role = 'user' } = req.body;
 
-    const user = await userDB.findByEmail(email);
+    let user;
+    let userRole = role;
+
+    // First check if user exists in users table
+    user = await userDB.findByEmail(email);
 
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
+      // If not found in users table, check admin table
+      const { data: admin, error: adminError } = await supabase
+        .from('admin')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-    // STRICT: Only allow Admins to login via Email/Password
-    if (user.role !== 'admin') {
-      return res.status(403).json({ message: 'Email login is restricted to Administrators. Please use WhatsApp login for customer accounts.' });
+      if (adminError && adminError.code !== 'PGRST116') throw adminError;
+
+      if (!admin) {
+        return res.status(400).json({ message: 'User not found' });
+      }
+
+      user = admin;
+      userRole = 'admin';
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -86,87 +115,64 @@ export const loginUser = async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role
-      }
+      user: { id: user.id, name: user.name, email: user.email, role: userRole }
     });
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
 };
 
-export const whatsappLogin = async (req, res) => {
-  try {
-    const { phone, name, email } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({ message: 'Phone number is required' });
-    }
-
-    let user = await userDB.findByPhone(phone);
-
-    if (!user) {
-      // Create new user (Sign Up)
-      // Generate random password for WhatsApp users
-      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-      user = await userDB.create({
-        name: name || 'User',
-        email: email || null, // Email is optional now
-        phone: phone,
-        password: hashedPassword,
-        role: 'user'
-      });
-    }
-
-    const token = generateToken(user.id);
-    res.json({
-      message: 'WhatsApp login successful',
-      token,
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'WhatsApp login failed', error: error.message });
-  }
-};
-
 export const googleLogin = async (req, res) => {
   try {
-    const { email, name, googleId } = req.body;
+    const { email, name } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required for Google Login' });
+      return res.status(400).json({ message: 'Email is required for Google login' });
     }
 
-    let user = await userDB.findByEmail(email);
+    let user;
+    let userRole = 'user'; // Default role
 
-    if (!user) {
-      // Create new user
-      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    // Check if user exists in the admin table
+    const { data: admin, error: adminError } = await supabase
+      .from('admin')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-      user = await userDB.create({
-        name: name || 'Google User',
-        email: email,
-        phone: null, // Phone might be null for Google users
-        password: hashedPassword,
-        role: 'user'
-      });
+    if (adminError && adminError.code !== 'PGRST116') throw adminError;
+
+    if (admin) {
+      user = admin;
+      userRole = 'admin';
+    } else {
+      // Check if user exists in normal users table
+      user = await userDB.findByEmail(email);
+
+      if (!user) {
+        // Create new user if they don't exist
+        // Note: For Google login, we might not have a password. 
+        // Generatng a random secure password as a placeholder since they login via OAuth
+        const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+        user = await userDB.create({
+          name: name || 'Google User',
+          email,
+          password: hashedPassword,
+          role: 'user'
+        });
+      }
     }
 
     const token = generateToken(user.id);
     res.json({
       message: 'Google login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: userRole }
     });
   } catch (error) {
+    console.error('Google Login Error:', error);
     res.status(500).json({ message: 'Google login failed', error: error.message });
   }
 };
@@ -222,18 +228,6 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Prevent deleting the last admin
-    if (user.role === 'admin') {
-      const { data: admins } = await supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'admin');
-
-      if (admins && admins.length <= 1) {
-        return res.status(400).json({ message: 'Cannot delete the only admin.' });
-      }
-    }
-
     // Delete related records first (cascade delete)
     // Delete from orders and order_items
     const { data: orders, error: ordersError } = await supabase
@@ -277,7 +271,7 @@ export const deleteUser = async (req, res) => {
 // Password Reset Functions
 export const sendPasswordResetOTP = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, role = 'user' } = req.body;
 
     // Check if user exists
     const user = await userDB.findByEmail(email);
@@ -325,7 +319,7 @@ export const sendPasswordResetOTP = async (req, res) => {
 
 export const verifyPasswordResetOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, role = 'user' } = req.body;
 
     // Validate input
     if (!email || !otp) {
@@ -379,7 +373,7 @@ export const verifyPasswordResetOTP = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, newPassword, role = 'user' } = req.body;
 
     // Validate input
     if (!email || !otp || !newPassword) {
@@ -447,17 +441,6 @@ export const makeAdmin = async (req, res) => {
       return res.status(400).json({ message: 'User is already an admin' });
     }
 
-    // Check if there is already an admin in the USERS table
-    const { data: existingAdmins, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', 'admin')
-      .limit(1);
-
-    if (existingAdmins && existingAdmins.length > 0) {
-      return res.status(400).json({ message: 'Admin slot is already taken. Only one admin is allowed.' });
-    }
-
     await userDB.update(user.id, { role: 'admin' });
 
     res.json({
@@ -472,9 +455,8 @@ export const makeAdmin = async (req, res) => {
 export const checkAdminExists = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('users')
+      .from('admin')
       .select('id')
-      .eq('role', 'admin')
       .limit(1);
 
     if (error) throw error;
