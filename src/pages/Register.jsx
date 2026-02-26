@@ -222,7 +222,7 @@ export default function Register() {
             {/* Removed Google Login Button */}
 
             {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="auth-form">
+            <form onSubmit={handleSubmit} className="auth-form" style={{ marginTop: 0 }}>
               {/* Full Name */}
               <div className="form-group">
                 <label className="form-label">Full Name</label>

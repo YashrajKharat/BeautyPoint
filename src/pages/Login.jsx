@@ -185,7 +185,7 @@ export default function Login() {
             {/* Removed Google Login Button */}
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="auth-form">
+            <form onSubmit={handleSubmit} className="auth-form" style={{ marginTop: 0 }}>
               {/* Email */}
               <div className="form-group">
                 <label className="form-label">Email Address</label>
