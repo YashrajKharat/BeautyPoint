@@ -6,25 +6,34 @@ export const getImageUrl = (imagePath) => {
   if (!imagePath) {
     return PLACEHOLDER_IMAGE;
   }
-  
+
   // If it's already a base64 data URL, return as is
   if (imagePath.startsWith('data:')) {
     return imagePath;
   }
-  
-  // If it's already a full HTTP URL, return as is
+
+  // If it's already a full HTTP URL, check if it's a Supabase URL that needs proxying
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    if (imagePath.includes('.supabase.co')) {
+      try {
+        const originalUrl = new URL(imagePath);
+        // Transform https://[project].supabase.co/storage/... -> /supabase-proxy/storage/...
+        return `${window.location.origin}/supabase-proxy${originalUrl.pathname}${originalUrl.search}`;
+      } catch (e) {
+        return imagePath;
+      }
+    }
     return imagePath;
   }
-  
+
   // For file paths, extract filename and use API endpoint
   const filename = imagePath.split('/').pop();
-  
+
   // Get the base server URL
-  const baseUrl = import.meta.env.VITE_API_URL 
-    ? import.meta.env.VITE_API_URL.replace('/api', '') 
+  const baseUrl = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace('/api', '')
     : `${window.location.protocol}//${window.location.hostname}:5000`;
-  
+
   // Return API endpoint for image serving
   return `${baseUrl}/api/image/${filename}`;
 };
