@@ -88,7 +88,9 @@ export const loginUser = async (req, res) => {
     // First check if user exists in users table
     user = await userDB.findByEmail(email);
 
-    if (!user) {
+    if (user) {
+      userRole = user.role || 'user';
+    } else {
       // If not found in users table, check admin table
       const { data: admin, error: adminError } = await supabase
         .from('admin')
