@@ -2,19 +2,19 @@
     "rewrites": [
         {
             "source": "/auth/:path*",
-            "destination": "https://beautypoint.onrender.com/auth/:path*"
+            "destination": "https://ebgeyvpuwaabcmsjxjyd.supabase.co/auth/:path*"
         },
         {
             "source": "/rest/:path*",
-            "destination": "https://beautypoint.onrender.com/rest/:path*"
+            "destination": "https://ebgeyvpuwaabcmsjxjyd.supabase.co/rest/:path*"
         },
         {
             "source": "/storage/:path*",
-            "destination": "https://beautypoint.onrender.com/storage/:path*"
+            "destination": "https://ebgeyvpuwaabcmsjxjyd.supabase.co/storage/:path*"
         },
         {
             "source": "/supabase-proxy/:path*",
-            "destination": "https://beautypoint.onrender.com/:path*"
+            "destination": "https://ebgeyvpuwaabcmsjxjyd.supabase.co/:path*"
         },
         {
             "source": "/(.*)",
