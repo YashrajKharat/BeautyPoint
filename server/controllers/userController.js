@@ -98,6 +98,8 @@ export const loginUser = async (req, res) => {
         .eq('email', email)
         .single();
 
+      console.log('Admin query result:', { admin, adminError });
+
       if (adminError && adminError.code !== 'PGRST116') throw adminError;
 
       if (!admin) {
@@ -120,6 +122,7 @@ export const loginUser = async (req, res) => {
       user: { id: user.id, name: user.name, email: user.email, role: userRole }
     });
   } catch (error) {
+    console.error('Login error details:', error);
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
 };

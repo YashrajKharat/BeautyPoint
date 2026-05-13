@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS cart;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS coupons;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS admin;
 
 -- 2. CREATE TABLES
 
@@ -34,6 +35,16 @@ CREATE TABLE users (
   phone TEXT UNIQUE,
   name TEXT,
   role TEXT DEFAULT 'user',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Admin (Separate admin table)
+CREATE TABLE admin (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE,
+  phone TEXT,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -99,5 +110,46 @@ CREATE POLICY "Public Create Items" ON order_items FOR INSERT WITH CHECK (true);
 ALTER TABLE cart ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "User Manage Own Cart" ON cart FOR ALL USING (auth.uid() = user_id);
 
--- 4. RESTORE PRODUCTS (40 Rescue Items)
+ALTER TABLE admin ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin Select" ON admin FOR SELECT USING (true);
+CREATE POLICY "Admin Insert" ON admin FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admin Update" ON admin FOR UPDATE USING (true);
+CREATE POLICY "Admin Delete" ON admin FOR DELETE USING (true);
+
+-- Grant access to the 'products' table
+GRANT SELECT ON public.products TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO service_role;
+
+-- Grant access to the 'users' table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.users TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.users TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.users TO service_role;
+
+-- Grant access to the 'admin' table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin TO service_role;
+
+-- Grant access to the 'coupons' table
+GRANT SELECT ON public.coupons TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.coupons TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.coupons TO service_role;
+
+-- Grant access to the 'orders' table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO service_role;
+
+-- Grant access to the 'order_items' table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_items TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_items TO service_role;
+
+-- Grant access to the 'cart' table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cart TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cart TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cart TO service_role;
+
+-- 5. RESTORE PRODUCTS (40 Rescue Items)
 -- Note: I will provide the INSERT statement separately in the chat to avoid making this file too long.
